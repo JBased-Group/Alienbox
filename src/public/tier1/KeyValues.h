@@ -30,6 +30,7 @@ class Color;
 class KeyValues;
 class IKeyValuesDumpContext;
 typedef void * FileHandle_t;
+class CKeyValuesGrowableStringTable;
 
 // single byte identifies a xbox kv file in binary format
 // strings are pooled from a searchpath/zip mounted symbol table
@@ -71,7 +72,9 @@ class KeyValues
 {
 public:
 	KeyValues( const char *setName );
+	
 
+	static void SetUseGrowableStringTable(bool bUseGrowableTable);
 	//
 	// AutoDelete class to automatically free the keyvalues.
 	// Simply construct it with the keyvalues you allocated and it will free them when falls out of scope.
@@ -120,13 +123,14 @@ public:
 	void SetName( const char *setName);
 
 	// gets the name as a unique int
-	int GetNameSymbol() const;
-	int GetNameSymbolCaseSensitive() const;
+	int GetNameSymbol() const { return m_iKeyName; }
+	int GetNameSymbolCaseSensitive() const { return m_iKeyName; }
 
 	// File access. Set UsesEscapeSequences true, if resource file/buffer uses Escape Sequences (eg \n, \t)
 	void UsesEscapeSequences(bool state); // default false
-	bool LoadFromFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL);
-	bool SaveToFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
+	bool LoadFromFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID, GetSymbolProc_t pfnEvaluateSymbolProc);
+	bool LoadFromFile(IBaseFileSystem* filesystem, const char* resourceName, const char* pathID = NULL, bool refreshCache = false);
+	bool SaveToFile(IBaseFileSystem* filesystem, const char* resourceName, const char* pathID = NULL, bool sortKeys = false, bool bAllowEmptyString = false, bool bCacheResult = false);
 
 	// Read from a buffer...  Note that the buffer must be null terminated
 	bool LoadFromBuffer( char const *resourceName, const char *pBuffer, IBaseFileSystem* pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL );
@@ -151,8 +155,9 @@ public:
 	// NOTE: GetFirstSubKey/GetNextKey will iterate keys AND values. Use the functions 
 	// below if you want to iterate over just the keys or just the values.
 	//
-	KeyValues *GetFirstSubKey();	// returns the first subkey in the list
-	KeyValues *GetNextKey();		// returns the next subkey
+	KeyValues* GetFirstSubKey() { return m_pSub; }	// returns the first subkey in the list
+	KeyValues* GetNextKey() { return m_pPeer; }		// returns the next subkey
+	const KeyValues* GetNextKey() const { return m_pPeer; }		// returns the next subkey
 	void SetNextKey( KeyValues * pDat);
 
 	//
@@ -183,7 +188,8 @@ public:
 	const wchar_t *GetWString( const char *keyName = NULL, const wchar_t *defaultValue = L"" );
 	void *GetPtr( const char *keyName = NULL, void *defaultValue = (void*)0 );
 	Color GetColor( const char *keyName = NULL , const Color &defaultColor = Color( 0, 0, 0, 0 ) );
-	bool GetBool( const char *keyName = NULL, bool defaultValue = false ) { return GetInt( keyName, defaultValue ? 1 : 0 ) ? true : false; }
+	//bool GetBool( const char *keyName = NULL, bool defaultValue = false ) { return GetInt( keyName, defaultValue ? 1 : 0 ) ? true : false; }
+	bool GetBool(const char* keyName = NULL, bool defaultValue = false, bool* optGotDefault = NULL);
 	bool  IsEmpty(const char *keyName = NULL);
 
 	// Data access
@@ -213,19 +219,25 @@ public:
 	void operator delete( void *pMem );
 	void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine );
 
-	KeyValues& operator=( KeyValues& src );
+
+
+	KeyValues& operator=(const KeyValues& src);
 
 	// Adds a chain... if we don't find stuff in this keyvalue, we'll look
 	// in the one we're chained to.
 	void ChainKeyValue( KeyValues* pChain );
-	
-	void RecursiveSaveToFile( CUtlBuffer& buf, int indentLevel );
+
+	void RecursiveSaveToFile(CUtlBuffer& buf, int indentLevel, bool sortKeys = false, bool bAllowEmptyString = false);
 
 	bool WriteAsBinary( CUtlBuffer &buffer );
-	bool ReadAsBinary( CUtlBuffer &buffer );
+	bool ReadAsBinary( CUtlBuffer &buffer, int nStackDepth = 0);
 
 	// Allocate & create a new copy of the keys
 	KeyValues *MakeCopy( void ) const;
+
+	// Allocate & create a new copy of the keys, including the next keys.This is useful for top level files
+	// that don't use the usual convention of a root key with lots of children (like soundscape files).
+	KeyValues* MakeCopy(bool copySiblings) const;
 
 	// Make a new copy of all subkeys, add them all to the passed-in keyvalues
 	void CopySubkeys( KeyValues *pParent ) const;
@@ -257,7 +269,7 @@ public:
 	void SetStringValue( char const *strValue );
 
 	// unpack a key values list into a structure
-	void UnpackIntoStructure( struct KeyValuesUnpackStructure const *pUnpackTable, void *pDest );
+	void UnpackIntoStructure( struct KeyValuesUnpackStructure const *pUnpackTable, void *pDest);
 
 	// Process conditional keys for widescreen support.
 	bool ProcessResolutionKeys( const char *pResString );
@@ -276,9 +288,40 @@ public:
 	void MergeFrom( KeyValues *kvMerge, MergeKeyValuesOp_t eOp = MERGE_KV_ALL );
 
 	// Assign keyvalues from a string
-	static KeyValues * FromString( char const *szName, char const *szStringVal, char const **ppEndOfParse = NULL );
+	static KeyValues * FromString( char const *szName, char const *szStringVal, char const **ppEndOfParse = NULL )
+	{
+		KeyValues* kv = new KeyValues(szName);
+		kv->LoadFromBuffer(szName, szStringVal);
+		return kv;
+	}
 		
+	// Functions that invoke the default behavior
+	static int GetSymbolForStringClassic(const char* name, bool bCreate = true);
+	static const char* GetStringForSymbolClassic(int symbol);
+
+	// Functions that use the growable string table
+	static int GetSymbolForStringGrowable(const char* name, bool bCreate = true);
+	static const char* GetStringForSymbolGrowable(int symbol);
+
+	// Functions to get external access to whichever of the above functions we're going to call.
+	static int CallGetSymbolForString(const char* name, bool bCreate = true) { return s_pfGetSymbolForString(name, bCreate); }
+	static const char* CallGetStringForSymbol(int symbol) { return s_pfGetStringForSymbol(symbol); }
+	
+	void UsesConditionals(bool state);
+	KeyValues* FindLastSubKey();	// returns the LAST subkey in the list.  This requires a linked list iteration to find the key.  Returns NULL if we don't have any children
+
 private:
+	void ParseIncludedKeys(char const* resourceName, const char* filetoinclude,
+		IBaseFileSystem* pFileSystem, const char* pPathID, CUtlVector< KeyValues* >& includedKeys);
+	void CopyKeyValuesFromRecursive(const KeyValues& src);
+	void CopyKeyValue(const KeyValues& src, size_t tmpBufferSizeB, char* tmpBuffer);
+
+	static int (*s_pfGetSymbolForString)(const char* name, bool bCreate);
+	static const char* (*s_pfGetStringForSymbol)(int symbol);
+	static CKeyValuesGrowableStringTable* s_pGrowableStringTable;
+
+
+
 	KeyValues( KeyValues& );	// prevent copy constructor being used
 
 	// prevent delete being called except through deleteThis()
@@ -293,10 +336,12 @@ private:
 	
 	// NOTE: If both filesystem and pBuf are non-null, it'll save to both of them.
 	// If filesystem is null, it'll ignore f.
-	void RecursiveSaveToFile( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, int indentLevel );
+	//void RecursiveSaveToFile( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, int indentLevel );
+	void RecursiveSaveToFile(IBaseFileSystem* filesystem, FileHandle_t f, CUtlBuffer* pBuf, int indentLevel, bool sortKeys, bool bAllowEmptyString);
+	void SaveKeyToFile(KeyValues* dat, IBaseFileSystem* filesystem, FileHandle_t f, CUtlBuffer* pBuf, int indentLevel, bool sortKeys, bool bAllowEmptyString);
 	void WriteConvertedString( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, const char *pszString );
 	
-	void RecursiveLoadFromBuffer( char const *resourceName, CUtlBuffer &buf, GetSymbolProc_t pfnEvaluateSymbolProc );
+	void RecursiveLoadFromBuffer( char const *resourceName, CUtlBuffer &buf, GetSymbolProc_t pfnEvaluateSymbolProc = NULL );
 
 	// for handling #include "filename"
 	void AppendIncludedKeys( CUtlVector< KeyValues * >& includedKeys );
@@ -321,6 +366,9 @@ private:
 	bool ReadAsBinaryPooledFormat( CUtlBuffer &buf, IBaseFileSystem *pFileSystem, unsigned int poolKey, GetSymbolProc_t pfnEvaluateSymbolProc );
 
 	bool EvaluateConditional( const char *pExpressionString, GetSymbolProc_t pfnEvaluateSymbolProc );
+
+	KeyValues* CreateKeyUsingKnownLastChild(const char* keyName, KeyValues* pLastChild);
+	void AddSubkeyUsingKnownLastChild(KeyValues* pSubKey, KeyValues* pLastChild);
 
 	uint32 m_iKeyName : 24;	// keyname is a symbol defined in KeyValuesSystem
 	uint32 m_iKeyNameCaseSensitive1 : 8;	// 1st part of case sensitive symbol defined in KeyValueSystem
@@ -469,6 +517,16 @@ inline bool KeyValuesDumpAsDevMsg( KeyValues *pKeyValues, int nIndentLevel = 0, 
 	CKeyValuesDumpContextAsDevMsg ctx( nDeveloperLevel );
 	return pKeyValues->Dump( &ctx, nIndentLevel );
 }
+
+
+class CUtlSortVectorKeyValuesByName
+{
+public:
+	bool Less(const KeyValues* lhs, const KeyValues* rhs, void*)
+	{
+		return Q_stricmp(lhs->GetName(), rhs->GetName()) < 0;
+	}
+};
 
 
 #endif // KEYVALUES_H

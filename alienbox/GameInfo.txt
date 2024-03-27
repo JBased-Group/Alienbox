@@ -1,0 +1,27 @@
+"GameInfo"
+{
+	"game"		"Alienbox"
+	"title"		"    "	// asw - leave this blank as we have a texture logo
+	"type"		"multiplayer_only"
+
+	GameData	"alienbox.fgd"
+	InstancePath "tilegen/instances/"
+
+	developer		"Reactive Drop Team & Alienbox Team"
+	developer_url	"https://store.steampowered.com/developer/reactivedrop/"
+	icon			"materials/reactivedrop"
+
+	SupportsDX8     0
+
+	"FileSystem"
+	{
+		"SteamAppId"	"563560"
+		"ToolsAppId"	"593000"
+
+		"SearchPaths"
+		{
+			"Game"	"|gameinfo_path|."
+			"Game"	"platform"
+		}
+	}
+}

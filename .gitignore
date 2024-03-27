@@ -55,3 +55,4 @@ src/.vs
 src/sourcelink.json
 src/utils/*/Debug/
 src/utils/*/Release/
+/src/tier1/Debug

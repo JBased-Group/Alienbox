@@ -140,6 +140,16 @@ char (*RtlpNumberOf( UNALIGNED T (&)[N] ))[N];
 #define RTL_NUMBER_OF_V2(A) RTL_NUMBER_OF_V1(A)
 #endif
 
+#if !defined(POSIX)
+#ifndef min
+#define min(a,b)  (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef max
+#define max(a,b)  (((a) > (b)) ? (a) : (b))
+#endif
+#endif
+
+
 // ARRAYSIZE is more readable version of RTL_NUMBER_OF_V2
 // _ARRAYSIZE is a version useful for anonymous types
 #define ARRAYSIZE(A)    RTL_NUMBER_OF_V2(A)

@@ -229,9 +229,28 @@ public:
 	float			GetFloat( );
 	double			GetDouble( );
 	void *			GetPtr();
-	void			GetString( char* pString, int nMaxChars = 0 );
 	void			Get( void* pMem, int size );
 	void			GetLine( char* pLine, int nMaxChars = 0 );
+
+	template <size_t maxLenInChars> void GetString(char(&pString)[maxLenInChars])
+	{
+		GetStringInternal(pString, maxLenInChars);
+	}
+
+	void GetString(char* pString, size_t maxLenInChars)
+	{
+		GetStringInternal(pString, maxLenInChars);
+	}
+
+	void GetString(char* pString, int maxLenInChars = 0)
+	{
+		GetStringInternal(pString, maxLenInChars);
+	}
+
+	void GetStringManualCharCount(char* pString, size_t maxLenInChars)
+	{
+		GetStringInternal(pString, maxLenInChars);
+	}
 
 	// Used for getting objects that have a byteswap datadesc defined
 	template <typename T> void GetObjects( T *dest, int count = 1 );
@@ -366,6 +385,10 @@ public:
 	// If the conversion occurs, outBuf will be cleared.
 	bool ConvertCRLF( CUtlBuffer &outBuf );
 
+	void Swap(CUtlBuffer& buf);
+
+	void Swap(CUtlMemory<uint8>& mem);
+
 	// Push/pop pretty-printing tabs
 	void PushTab();
 	void PopTab();
@@ -397,6 +420,9 @@ protected:
 	// Methods to help with pretty-printing
 	bool WasLastCharacterCR();
 	void PutTabs();
+
+	void GetStringInternal(char* pString, size_t maxLenInChars);
+
 
 	// Help with delimited stuff
 	char GetDelimitedCharInternal( CUtlCharConversion *pConv );

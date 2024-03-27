@@ -57,6 +57,10 @@ public:
 
 	void    SetFromSocket( int hSocket );
 
+	unsigned int GetIPNetworkByteOrder() const;
+
+	unsigned int GetIPHostByteOrder() const;
+
 	// These function names are decorated because the Xbox360 defines macros for ntohl and htonl
  	unsigned long addr_ntohl() const;
  	unsigned long addr_htonl() const;

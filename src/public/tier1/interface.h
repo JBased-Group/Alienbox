@@ -151,6 +151,12 @@ enum
 	IFACE_FAILED
 };
 
+enum Sys_Flags
+{
+	SYS_NOFLAGS = 0x00,
+	SYS_NOLOAD = 0x01   // no loading, no ref-counting, only returns handle if lib is loaded. 
+};
+
 //-----------------------------------------------------------------------------
 // This function is automatically exported and allows you to access any interfaces exposed with the above macros.
 // if pReturnCode is set, it will return one of the following values (IFACE_OK, IFACE_FAILED)
@@ -174,7 +180,7 @@ extern CreateInterfaceFn	Sys_GetFactoryThis( void );
 // The factory for that module should be passed on to dependent components for
 // proper versioning.
 //-----------------------------------------------------------------------------
-extern CSysModule			*Sys_LoadModule( const char *pModuleName );
+extern CSysModule			*Sys_LoadModule( const char *pModuleName, Sys_Flags flags = SYS_NOFLAGS );
 extern void					Sys_UnloadModule( CSysModule *pModule );
 
 // Determines if current process is running with any debug modules

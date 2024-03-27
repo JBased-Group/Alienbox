@@ -24,9 +24,20 @@
 #include "tier1/utlvector.h"
 #include "tier1/utlrbtree.h"
 
+
+
+enum MemoryPoolGrowType_t
+{
+	UTLMEMORYPOOL_GROW_NONE = 0,		// Don't allow new blobs.
+	UTLMEMORYPOOL_GROW_FAST = 1,		// New blob size is numElements * (i+1)  (ie: the blocks it allocates
+	// get larger and larger each time it allocates one).
+	UTLMEMORYPOOL_GROW_SLOW = 2		// New blob size is numElements.
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Optimized pool memory allocator
 //-----------------------------------------------------------------------------
+
 
 typedef void (*MemoryPoolReportFunc_t)( char const* pMsg, ... );
 

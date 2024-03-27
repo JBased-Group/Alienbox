@@ -104,6 +104,7 @@ typedef void * HINSTANCE;
 	#define PLATFORM_WINDOWS	1
 
 	#ifndef _X360
+		#define IsWindows() true
 		#define IsPlatformX360() false
 		#define IsPlatformWindowsPC() true
 		#define PLATFORM_WINDOWS_PC 1
@@ -523,6 +524,10 @@ typedef unsigned int		uint;
 #define ALIGN128_POST
 #endif
 
+#include "annotations.h"
+
+#define INT_TO_POINTER( i ) (void *)( ( i ) + (char *)NULL )
+#define POINTER_TO_INT( p ) ( (int)(uintp)( p ) )
 
 // This can be used to declare an abstract (interface only) class.
 // Classes marked abstract should not be instantiated.  If they are, and access violation will occur.
@@ -694,6 +699,7 @@ PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessa
 #else
 #define Plat_MessageBox( t, m ) ((void)0)
 #endif
+
 
 
 //-----------------------------------------------------------------------------
@@ -1055,6 +1061,16 @@ inline void SwapFloat( float *pOut, const float *pIn )		{ SafeSwapFloat( pOut, p
 	{
 		base[dwordIndex] = LittleDWord(dword);
 	}
+
+	inline unsigned long LoadLittleDWord(unsigned long* base, unsigned int dwordIndex)
+	{
+		return LittleDWord(base[dwordIndex]);
+	}
+
+	inline void StoreLittleDWord(unsigned long* base, unsigned int dwordIndex, unsigned long dword)
+	{
+		base[dwordIndex] = LittleDWord(dword);
+	}
 #endif
 
 
@@ -1069,6 +1085,7 @@ PLATFORM_INTERFACE bool				Plat_IsInBenchmarkMode();
 PLATFORM_INTERFACE double			Plat_FloatTime();		// Returns time in seconds since the module was loaded.
 PLATFORM_INTERFACE uint32			Plat_MSTime();			// Time in milliseconds.
 PLATFORM_INTERFACE uint64			Plat_GetClockStart();	// Snapshot of the clock when app started.
+extern "C" struct tm* Plat_localtime(const time_t * timep, struct tm* result);
 
 // Get the local calendar time.
 // Same as time() followed by localtime(), but non-crash-prone and threadsafe.
@@ -1444,6 +1461,8 @@ RETURN_TYPE FASTCALL __Function_##NAME<nArgument>::Run ARGS
 	}
 
 
+
+
 //-----------------------------------------------------------------------------
 // Dynamic libs support
 //-----------------------------------------------------------------------------
@@ -1472,6 +1491,38 @@ public:
 private:
 	FUNCPTR_TYPE m_pfn;
 };
+#endif
+
+
+template <class T, class P>
+inline void ConstructOneArg(T* pMemory, P const& arg)
+{
+	HINT(pMemory != 0);
+	::new(pMemory) T(arg);
+}
+
+template <class T, class P1, class P2 >
+inline void ConstructTwoArg(T* pMemory, P1 const& arg1, P2 const& arg2)
+{
+	HINT(pMemory != 0);
+	::new(pMemory) T(arg1, arg2);
+}
+
+template <class T, class P1, class P2, class P3 >
+inline void ConstructThreeArg(T* pMemory, P1 const& arg1, P2 const& arg2, P3 const& arg3)
+{
+	HINT(pMemory != 0);
+	::new(pMemory) T(arg1, arg2, arg3);
+}
+
+
+#ifdef VALVE_RVALUE_REFS
+template <class T>
+inline void CopyConstruct(T* pMemory, T&& src)
+{
+	HINT(pMemory != 0);
+	::new(pMemory)T(std::forward<T>(src));
+}
 #endif
 
 
@@ -1602,7 +1653,8 @@ extern int V_tier0_stricmp(const char *s1, const char *s2 );
 #define strcmpi(s1,s2) V_tier0_stricmp( s1, s2 )
 #else
 int	_V_stricmp	  (const char *s1, const char *s2 );
-int	V_strncasecmp (const char *s1, const char *s2, int n);
+int V_strnicmp(const char* s1, const char* s2, int n);
+inline int	V_strncasecmp (const char *s1, const char *s2, int n) { return V_strnicmp(s1, s2, n); }
 
 // A special high-performance case-insensitive compare function that in
 // a single call distinguishes between exactly matching strings,

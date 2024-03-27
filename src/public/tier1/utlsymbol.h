@@ -256,8 +256,10 @@ class CUtlFilenameSymbolTable
 		// Part after the final '/', including extension
 		unsigned short file;
 	};
-
+	class HashTable;
 public:
+	CUtlFilenameSymbolTable();
+	~CUtlFilenameSymbolTable();
 	FileNameHandle_t	FindOrAddFileName( const char *pFileName );
 	FileNameHandle_t	FindFileName( const char *pFileName );
 	int					PathIndex(const FileNameHandle_t &handle) { return (( const FileNameHandleInternal_t * )&handle)->path; }
@@ -268,7 +270,8 @@ public:
 	bool				RestoreFromBuffer( CUtlBuffer &buffer );
 
 private:
-	CCountedStringPool	m_StringPool;
+	//CCountedStringPool	m_StringPool;
+	HashTable* m_Strings;
 	mutable CThreadSpinRWLock m_lock;
 };
 

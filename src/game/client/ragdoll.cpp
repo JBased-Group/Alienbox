@@ -111,7 +111,7 @@ void CRagdoll::BuildRagdollBounds( C_BaseEntity *ent )
 }
 
 static ConVar cl_ragdoll_self_collision( "cl_ragdoll_self_collision", "0", FCVAR_DEVELOPMENTONLY );
-extern ConVar cl_ragdoll_collide;
+static ConVar cl_ragdoll_collide("cl_ragdoll_collide", "1");
 
 void CRagdoll::Init( 
 	C_BaseEntity *ent, 
