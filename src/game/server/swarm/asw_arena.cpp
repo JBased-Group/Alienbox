@@ -19,8 +19,9 @@ ConVar asw_arena_wall_density_min( "asw_arena_wall_density_min", "0.0", FCVAR_CH
 ConVar asw_arena_wall_density_max( "asw_arena_wall_density_max", "0.7", FCVAR_CHEAT, "Max density of random wall brushes in arena mode" );
 ConVar asw_arena_waves_per_difficulty( "asw_arena_waves_per_difficulty", "3", FCVAR_CHEAT, "How many waves before difficulty ramps up" );
 
-CASW_Arena g_ASWArena;
-CASW_Arena* ASWArena() { return &g_ASWArena; }
+//CASW_Arena g_ASWArena;
+//CASW_Arena* ASWArena() { return &g_ASWArena; }
+CASW_Arena* ASWArena() { return 0; }
 
 CASW_Arena::CASW_Arena( void ) : CAutoGameSystemPerFrame( "CASW_Arena" )
 {

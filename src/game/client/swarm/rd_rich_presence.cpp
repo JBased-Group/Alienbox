@@ -491,7 +491,7 @@ void RD_Rich_Presence::UpdatePresence()
 			{
 				pProfile = pMarine->GetMarineProfile();
 			}
-			else if ( pASW->GetGameState() == ASW_GS_BRIEFING )
+			else if ( 0 && pASW->GetGameState() == ASW_GS_BRIEFING )
 			{
 				if ( IBriefing *pBriefing = Briefing() )
 				{

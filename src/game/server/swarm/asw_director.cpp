@@ -41,8 +41,9 @@ ConVar rd_prespawn_scale( "rd_prespawn_scale", "0", FCVAR_CHEAT, "Director: will
 ConVar rd_director_max_awake_aliens_for_horde( "rd_director_max_awake_aliens_for_horde", "25", FCVAR_CHEAT, "If there are more awake aliens than this number director will not spawn new hordes", true, 0, true, 1000 );
 ConVar rd_director_max_awake_aliens_for_wanderers( "rd_director_max_awake_aliens_for_wanderers", "20", FCVAR_CHEAT, "If there are more awake aliens than this number director will not spawn new wanderers", true, 0, true, 1000 );
 
-CASW_Director g_ASWDirector;
-CASW_Director* ASWDirector() { return &g_ASWDirector; }
+//CASW_Director g_ASWDirector;
+//CASW_Director* ASWDirector() { return &g_ASWDirector; }
+CASW_Director* ASWDirector() { return 0; }
 
 CASW_Director::CASW_Director( void ) : CAutoGameSystemPerFrame( "CASW_Director" )
 {

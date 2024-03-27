@@ -381,8 +381,8 @@ inline C_ASW_Player* ToASW_Player( CBasePlayer* pPlayer )
 	if ( !pPlayer )
 		return NULL;
 
-	Assert(dynamic_cast<C_ASW_Player*>(pPlayer) != NULL);
-	return static_cast<C_ASW_Player*>(pPlayer);
+	//Assert(dynamic_cast<C_ASW_Player*>(pPlayer) != NULL);
+	return dynamic_cast<C_ASW_Player*>(pPlayer);
 }
 
 

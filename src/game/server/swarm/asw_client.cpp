@@ -49,7 +49,7 @@ called each time a player is spawned into the game
 void ClientPutInServer( edict_t *pEdict, const char *playername )
 {
 	// Allocate a CBasePlayer for pev, and call spawn
-	CASW_Player *pPlayer = CASW_Player::CreatePlayer( "player", pEdict );
+	CBasePlayer *pPlayer = CBasePlayer::CreatePlayer( "player", pEdict );
 	pPlayer->SetPlayerName( playername );
 
 	// Send the current (or next) timescale
@@ -63,7 +63,7 @@ void ClientPutInServer( edict_t *pEdict, const char *playername )
 
 void ClientActive( edict_t *pEdict, bool bLoadGame )
 {
-	CASW_Player *pPlayer = ToASW_Player( CBaseEntity::Instance( pEdict ) );
+	CBasePlayer *pPlayer = ToBasePlayer( CBaseEntity::Instance( pEdict ) );
 	Assert( pPlayer );
 
 	if ( !pPlayer )
@@ -226,6 +226,6 @@ void GameStartFrame( void )
 //=========================================================
 void InstallGameRules()
 {
-	CreateGameRulesObject( "CAlienSwarm" );
+	CreateGameRulesObject( "CMultiplayRules" );
 }
 

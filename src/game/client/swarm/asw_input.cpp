@@ -71,14 +71,14 @@ extern ConVar asw_marine_gun_offset_z;
 //-----------------------------------------------------------------------------
 // Purpose: ASW Input interface
 //-----------------------------------------------------------------------------
-static CASWInput g_Input;
+static CInput g_Input;
 
 // Expose this interface
 IInput *input = ( IInput * )&g_Input;
 
 CASWInput *ASWInput() 
 { 
-	return &g_Input;
+	return dynamic_cast<CASWInput*>(&g_Input);
 }
 
 
@@ -476,7 +476,7 @@ C_BaseEntity* HUDToWorld(float screenx, float screeny,
 		{
 			if ( !bWeaponHasRadiusScale )
 			{
-				if ( ASWGameRules()->CanFlareAutoaimAt( pNPC, pEnt ) )
+				if ( 0 && ASWGameRules()->CanFlareAutoaimAt( pNPC, pEnt ) )
 				{
 					bBestAlienUsingFlareAutoaim = true;
 				}
@@ -525,7 +525,7 @@ C_BaseEntity* HUDToWorld(float screenx, float screeny,
 			bool bFlareAutoaim = false;
 			if ( !bWeaponHasRadiusScale )
 			{
-				if ( ASWGameRules()->CanFlareAutoaimAt( pNPC, pEnt ) )
+				if ( 0 && ASWGameRules()->CanFlareAutoaimAt( pNPC, pEnt ) )
 				{
 					flRadiusScale *= 2.0f;
 					bFlareAutoaim = true;
@@ -1398,7 +1398,7 @@ void ASW_UpdateControllerCodes()
 
 const char *ASW_FindKeyBoundTo( const char *binding )
 {
-	const char *pKeyText = g_RD_Steam_Input.Key_LookupBindingEx( binding, -1, 0, ASWInput()->ControllerModeActive() );
+	const char *pKeyText = g_RD_Steam_Input.Key_LookupBindingEx( binding, -1, 0, input->ControllerModeActive() );
 	if ( !pKeyText )
 	{
 		return "#GameUI_KeyNames_Not_Bound";
@@ -1565,7 +1565,7 @@ void CASWInput::ControllerMove( int nSlot, float frametime, CUserCmd *cmd )
 			int current_posx, current_posy;
 			GetMousePos(current_posx, current_posy);
 
-			if ( ASWGameRules()->GetGameState() == ASW_GS_CAMPAIGNMAP )
+			if ( 0 && ASWGameRules()->GetGameState() == ASW_GS_CAMPAIGNMAP )
 			{
 				// Convert to centered dimensions relative to the Y (0,0 is center 1,1 is half height to the right and bottom)
 				m_vecCrosshairTracePos.x = ( static_cast<float>( current_posx - ( ScreenWidth() / 2 ) ) / ScreenHeight() );

@@ -395,7 +395,6 @@ void C_BaseEntity::RecvProxy_CellZ( const CRecvProxyData *pData, void *pStruct, 
 void C_BaseEntity::RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {
 	CBaseEntity *pEnt = (CBaseEntity *)pStruct;
-
 	Vector *vecNetworkOrigin = (Vector *)pOut;
 
 	Assert( vecNetworkOrigin == &pEnt->m_vecNetworkOrigin );
@@ -411,6 +410,7 @@ void C_BaseEntity::RecvProxy_CellOrigin( const CRecvProxyData *pData, void *pStr
 		vecNetworkOrigin->y = CoordFromCell( cellwidth, pEnt->m_cellY, pData->m_Value.m_Vector[1] );
 		vecNetworkOrigin->z = CoordFromCell( cellwidth, pEnt->m_cellZ, pData->m_Value.m_Vector[2] );
 	}
+	
 }
 
 void C_BaseEntity::RecvProxy_CellOriginXY( const CRecvProxyData *pData, void *pStruct, void *pOut )
@@ -5806,7 +5806,7 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
+//---------------------- -------------------------------------------------------
 bool C_BaseEntity::ShouldSavePhysics()
 {
 	return false;

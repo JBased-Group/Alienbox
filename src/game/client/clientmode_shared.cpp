@@ -260,8 +260,15 @@ void ClientModeShared::InitWeaponSelectionHudElement()
 	Assert( m_pWeaponSelection );
 }
 
+void ClientModeShared::DoPostScreenSpaceEffects(const CViewSetup* pSetup)
+{
+
+}
+
 void ClientModeShared::InitViewport()
 {
+	m_pViewport = new CBaseViewport();
+	m_pViewport->Start(gameuifuncs, gameeventmanager);
 }
 
 

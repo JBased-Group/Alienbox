@@ -270,13 +270,13 @@ void CASW_Weapon_Pistol::ItemPostFrame( void )
 	if ( m_bInReload )
 		return;
 	
-	CASW_Player *pOwner = GetCommander();
+	CBasePlayer *pOwner = GetCommander();
 
 	if ( pOwner == NULL )
 		return;
 
 	// reactivedrop: don't allow bots to shoot so fast from pistols 
-	if ( pOwner->GetNPC() != GetOwner() )
+	if ( pOwner->IsNPC() )
 		return;
 
 	//Allow a refire as fast as the player can click

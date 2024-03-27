@@ -1,0 +1,438 @@
+// This file is used to set up which aliens will be spawned by AI Director
+// when Onslaught mode is enabled
+// Onslaught mode turns on spawning of 'hordes', 'wanderers' and 'alien packs'
+//
+// Horde is a bunch(usually 7-20) of aliens(usually drones) spawned together
+// somewhere off screen and run to marines.
+//
+// Wanderer is a single alien spawned off screen and runs to marines.
+//
+// Pack is a bunch(3-10) of aliens(like parasites) which is spawned somewhere on
+// the map and wait for marines there
+//
+// This file contains defaults for Onslaught mode
+// When you create a new challenge or a map you can use this file as an example
+// to create your own rules for Onslaught. Details described below
+
+// Accepted spawn types:
+//
+// - HORDE (horde, will choose a single definition for the whole horde)
+// - WANDERER (wanderer, will choose a definition per spawn)
+// - HORDE_WANDERER (wanderers spawned with hordes, will choose a definition per spawn)
+// - PRESPAWN (spawned at map start, similar to shieldbugs, separate position for each npc)
+// - PACK (spawned at map start, similar to parasites, npcs spawned in a group)
+//
+// Multiple spawn types can be specified for a definition by combining them with +. For
+// example, "HORDE+WANDERER+HORDE_WANDERER" counts as three separate definitions, one
+// for each of the specified spawn types.
+//
+// Accepted AlienClass types:
+//
+// - asw_drone
+// - asw_buzzer
+// - asw_parasite
+// - asw_shieldbug
+// - asw_grub
+// - asw_drone_jumper
+// - asw_harvester
+// - asw_parasite_defanged
+// - asw_queen
+// - asw_boomer
+// - asw_ranger
+// - asw_mortarbug
+// - asw_shaman
+// - asw_drone_uber
+// - npc_antlionguard_normal
+// - npc_antlionguard_cavern
+// - npc_antlion
+// - npc_antlion_worker
+// - npc_zombie
+// - npc_zombie_torso
+// - npc_poisonzombie
+// - npc_fastzombie
+// - npc_fastzombie_torso
+// - npc_headcrab
+// - npc_headcrab_fast
+// - npc_headcrab_poison
+// - npc_zombine
+// - npc_combine_s
+// - npc_combine_shotgun
+// - npc_combine_elite
+// - npc_hunter
+//
+// The following KeyValues are also accepted in the NPC block:
+//
+// - HealthBonus (must be at least 0, default 0)
+// - SpeedScale (must be above 0, default 1.0)
+// - SizeScale (must be above 0, default 1.0)
+// - Flammable (0 or 1, default 1)
+// - Freezable (0 or 1, default 1)
+// - FreezeResistance (any value, default 0.0), Examples: 0.8 means unfreezes 5 times as fast, -1.0 means unfreezes 2 times as slow
+// - Teslable (0 or 1, default 1)
+// - Flinches (0 or 1, default 1)
+// - Reflector (0 or 1, default 0)
+// - VScript (name of a file in scripts/vscripts, run with the global "self" variable set to the alien entity)
+// - ModelOverride (name of a model to give the alien instead of its default)
+// - SpawnChance (>0 to 1, default 1, chance that this NPC spawns at all)
+//
+// The following KeyValues affect whether an NPC block is allowed to spawn and may be specified any number
+// of times. They can also be used on a spawn definition block (HORDE, WANDERER, PACK+WANDERER, etc.).
+// If a spawn definition does not pass these tests, it will be ignored. However, if only NPC blocks inside a
+// spawn definition do not pass the tests, the spawn definition can still be chosen and it will spawn 0 aliens.
+//
+// - RequireCVar (name of a console variable that must be true)
+// - RequireGlobal (OFF:name, ON:name, or DEAD:name to require a state of a named env_global entity,
+//     MIN:number:name or MAX:number:name to require that an env_global counter is within a range)
+// - BeforeObjective (name of a map objective entity that must be incomplete)
+// - AfterObjective (name of a map objective entity that must be complete)
+// - SpawnerSpawning (name of an asw_spawner entity that must have had the input StartSpawning
+//     or been set to start spawning at mission start)
+// - SpawnerWaiting (name of an asw_spawner entity that must be stopped or waiting for inputs)
+//
+// Invalid uses of the NPC block keyvalues are reported to the console when loading a map.
+//
+// SpawnSetOverlay allows overriding settings or adding spawn definitions to a previously
+// defined SpawnSet. The SpawnSetOverlay must come after the last SpawnSet that applies
+// in order to function. The Map / MinSkill / MaxSkill keys do not need to match any
+// SpawnSet exactly.
+//
+// If you are a map maker, please name your file alien_selection_mymapname.txt,
+// for example alien_selection_asi-jac1-landingbay_01.txt. This will prevent conflicts
+// when multiple map makers include their own alien selection files.
+//
+// Similarly, challenges should name their files alien_selection_mychallengename.txt,
+// for example alien_selection_asbi.txt. The challenges are favored over the map,
+// and the map is favored over the global file.
+//
+// If a map author wants to override a challenge to provide settings specific to their
+// map, they can use the file name alien_selection_mymapname_theirchallengename.txt,
+// for example alien_selection_asi-jac1-landingbay_01_asbi.txt. Challenge authors should
+// not use this style of file name.
+
+"SpawnSet" {
+	"Name"	"default - easy/normal"
+	"Map"	"*"
+	"MinSkill"	"1"
+	"MaxSkill"	"2"
+	"MinHordeSize"	"8"
+	"MaxHordeSize"	"12"
+	"MinWanderers"	"1"
+	"MaxWanderers"	"1"
+	"MinHordeWanderers"	"1"
+	"MaxHordeWanderers"	"2"
+	"MinPrespawn"	"1"
+	"MaxPrespawn"	"1"
+	"MinPacks"	"1"
+	"MaxPacks"	"1"
+
+	"HORDE" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_drone"
+		}
+	}
+	"WANDERER" {
+		"SelectionWeight"	"50"
+		"NPC" {
+			"AlienClass"	"asw_drone"
+		}
+	}
+	"HORDE_WANDERER+WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_drone_jumper"
+		}
+	}
+	"HORDE_WANDERER+WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_ranger"
+		}
+	}
+	"WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+			"SpawnChance"	"0.5"
+		}
+	}
+	"PRESPAWN" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_shieldbug"
+			"SpawnChance"	"0.5"
+		}
+		"NPC" {
+			"AlienClass"	"npc_antlionguard_normal"
+			"RequireCVar"	"rd_prespawn_antlionguard"
+			"SpawnChance"	"0.5"
+		}
+		"NPC" {
+			"AlienClass"	"npc_antlionguard_cavern"
+			"RequireCVar"	"rd_prespawn_antlionguard"
+			"SpawnChance"	"0.5"
+		}
+	}
+	"PACK" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.75"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.5"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.25"
+		}
+	}
+}
+"SpawnSet" {
+	"Name"	"default - hard"
+	"Map"	"*"
+	"MinSkill"	"3"
+	"MaxSkill"	"3"
+	"MinHordeSize"	"8"
+	"MaxHordeSize"	"12"
+	"MinWanderers"	"1"
+	"MaxWanderers"	"1"
+	"MinHordeWanderers"	"1"
+	"MaxHordeWanderers"	"2"
+	"MinPrespawn"	"1"
+	"MaxPrespawn"	"1"
+	"MinPacks"	"1"
+	"MaxPacks"	"2"
+
+	"HORDE" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_drone"
+		}
+	}
+	"WANDERER" {
+		"SelectionWeight"	"50"
+		"NPC" {
+			"AlienClass"	"asw_drone"
+		}
+	}
+	"HORDE_WANDERER+WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_drone_jumper"
+		}
+	}
+	"HORDE_WANDERER+WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_ranger"
+		}
+	}
+	"WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+			"SpawnChance"	"0.5"
+		}
+	}
+	"HORDE_WANDERER" {
+		"SelectionWeight"	"0.25"
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+	}
+	"PRESPAWN" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_shieldbug"
+			"SpawnChance"	"0.75"
+		}
+		"NPC" {
+			"AlienClass"	"npc_antlionguard_normal"
+			"RequireCVar"	"rd_prespawn_antlionguard"
+			"SpawnChance"	"0.75"
+		}
+		"NPC" {
+			"AlienClass"	"npc_antlionguard_cavern"
+			"RequireCVar"	"rd_prespawn_antlionguard"
+			"SpawnChance"	"0.75"
+		}
+	}
+	"PACK" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.75"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.5"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.25"
+		}
+	}
+}
+"SpawnSet" {
+	"Name"	"default - insane/brutal"
+	"Map"	"*"
+	"MinSkill"	"4"
+	"MaxSkill"	"5"
+	"MinHordeSize"	"8"
+	"MaxHordeSize"	"12"
+	"MinWanderers"	"1"
+	"MaxWanderers"	"1"
+	"MinHordeWanderers"	"1"
+	"MaxHordeWanderers"	"2"
+	"MinPrespawn"	"1"
+	"MaxPrespawn"	"1"
+	"MinPacks"	"2"
+	"MaxPacks"	"3"
+
+	"HORDE" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_drone"
+		}
+	}
+	"WANDERER" {
+		"SelectionWeight"	"50"
+		"NPC" {
+			"AlienClass"	"asw_drone"
+		}
+	}
+	"HORDE_WANDERER+WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_drone_jumper"
+		}
+	}
+	"HORDE_WANDERER+WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_ranger"
+		}
+	}
+	"WANDERER" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+		}
+		"NPC" {
+			"AlienClass"	"asw_buzzer"
+			"SpawnChance"	"0.5"
+		}
+	}
+	"HORDE_WANDERER" {
+		"SelectionWeight"	"0.5"
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite_defanged"
+		}
+	}
+	"PRESPAWN" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_shieldbug"
+		}
+		"NPC" {
+			"AlienClass"	"npc_antlionguard_normal"
+			"RequireCVar"	"rd_prespawn_antlionguard"
+		}
+		"NPC" {
+			"AlienClass"	"npc_antlionguard_cavern"
+			"RequireCVar"	"rd_prespawn_antlionguard"
+		}
+	}
+	"PACK" {
+		"SelectionWeight"	"1"
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.75"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.5"
+		}
+		"NPC" {
+			"AlienClass"	"asw_parasite"
+			"SpawnChance"	"0.25"
+		}
+	}
+}

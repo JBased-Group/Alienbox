@@ -90,6 +90,7 @@ void CNB_Vote_Panel::OnTick()
 
 void CNB_Vote_Panel::UpdateVotePanelStatus()
 {
+#if 0
 	if ( ASWGameRules() )
 	{
 		float flCorrection = 0.0f;
@@ -122,6 +123,7 @@ void CNB_Vote_Panel::UpdateVotePanelStatus()
 			return;
 		}
 	}
+#endif
 
 	m_VotePanelStatus = VPS_NONE;
 }

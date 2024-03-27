@@ -1691,7 +1691,7 @@ void CASWHud3DMarineNames::MsgFunc_RDStrangeDeviceTier( bf_read &msg )
 void CASWHud3DMarineNames::PaintStrangeDeviceNotifications()
 {
 	C_ASW_Player *pLocalPlayer = C_ASW_Player::GetLocalASWPlayer();
-	Assert( pLocalPlayer );
+	//Assert( pLocalPlayer );
 	if ( !pLocalPlayer || m_StrangeDeviceNotifications.Count() == 0 )
 		return;
 

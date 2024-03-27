@@ -47,7 +47,7 @@ public:
 };
 
 // PlayerMove Interface
-static CASW_PlayerMove g_PlayerMove;
+static CPlayerMove g_PlayerMove;
 
 //-----------------------------------------------------------------------------
 // Singleton accessor

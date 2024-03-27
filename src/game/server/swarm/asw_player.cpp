@@ -204,8 +204,8 @@ void TE_MarineAnimEventJustCommander( CASW_Marine *pMarine, PlayerAnimEvent_t ev
 // Tables.
 // -------------------------------------------------------------------------------- //
 
-LINK_ENTITY_TO_CLASS( player, CASW_Player );
-PRECACHE_REGISTER(player);
+//LINK_ENTITY_TO_CLASS( aswplayer, CASW_Player );
+//PRECACHE_REGISTER(aswplayer);
 
 IMPLEMENT_SERVERCLASS_ST( CASW_Player, DT_ASW_Player )
 	SendPropExclude( "DT_BaseAnimating", "m_flPoseParameter" ),

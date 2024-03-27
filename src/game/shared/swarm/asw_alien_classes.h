@@ -16,7 +16,7 @@ public:
 #ifdef RD_7A_ENEMIES
 extern const ASW_Alien_Class_Entry g_Aliens[38];
 #else
-extern const ASW_Alien_Class_Entry g_Aliens[31];
+extern const ASW_Alien_Class_Entry g_Aliens[17];
 #endif
 extern const ASW_Alien_Class_Entry g_NonSpawnableAliens[5];
 

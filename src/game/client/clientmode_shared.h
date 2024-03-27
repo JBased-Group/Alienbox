@@ -106,6 +106,7 @@ public:
 
 	virtual void InitChatHudElement( void );
 	virtual void InitWeaponSelectionHudElement( void );
+	virtual void DoPostScreenSpaceEffects(const CViewSetup* pSetup);
 
 protected:
 	CBaseViewport			*m_pViewport;

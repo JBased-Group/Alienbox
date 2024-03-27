@@ -451,6 +451,8 @@ BEGIN_ENT_SCRIPTDESC( CBasePlayer, CBaseAnimating, "The player entity." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetPlayerUserID, "GetPlayerUserID", "Get the player's userID." )
 END_SCRIPTDESC();
 
+LINK_ENTITY_TO_CLASS(player, CBasePlayer);
+PRECACHE_REGISTER(player);
 
 int giPrecacheGrunt = 0;
 
@@ -540,6 +542,8 @@ CBasePlayer *CBasePlayer::CreatePlayer( const char *className, edict_t *ed )
 CBasePlayer::CBasePlayer( )
 {
 	AddEFlags( EFL_NO_AUTO_EDICT_ATTACH );
+
+	
 
 #ifdef _DEBUG
 	m_vecAdditionalPVSOrigin.Init();
@@ -4927,7 +4931,7 @@ void CBasePlayer::Spawn( void )
 	{
 		Hints()->ResetHints();
 	}
-
+	SetModel("models/player.mdl");
 	SetClassname( "player" );
 
 	// Shared spawning code..
@@ -4962,7 +4966,7 @@ void CBasePlayer::Spawn( void )
 	SetEffects( effects | EF_NOINTERP );
 
 	m_bClientSideRagdoll = false;
-
+	
 	// Initialize the fog and postprocess controllers.
 	InitFogController();
 	InitPostProcessController();

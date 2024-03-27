@@ -532,8 +532,8 @@ void RotateCameraRight()
 	}
 }
 
-static ConCommand rotatecameraleft("rotatecameraleft", RotateCameraLeft, "Rotates marine camera by 90 degrees", 0);
-static ConCommand rotatecameraright("rotatecameraright", RotateCameraRight, "Rotates marine camera by -90 degrees", 0);
+//static ConCommand rotatecameraleft("rotatecameraleft", RotateCameraLeft, "Rotates marine camera by 90 degrees", 0);
+//static ConCommand rotatecameraright("rotatecameraright", RotateCameraRight, "Rotates marine camera by -90 degrees", 0);
 
 CON_COMMAND_F( rotatecameraexact, "Rotates marine camera to exact yaw angle", FCVAR_CHEAT )
 {

@@ -1974,7 +1974,7 @@ void CServerGameDLL::GetMatchmakingTags( char *buf, size_t bufSize )
 	Q_strncpy( buf, mp_gamemode.GetString(), bufSize );
 #endif
 
-#ifdef INFESTED_DLL
+#if defined(INFESTED_DLL) && 0
 	extern ConVar asw_marine_ff_absorption;
 	extern ConVar asw_sentry_friendly_fire_scale;
 	extern ConVar asw_horde_override;
@@ -2037,6 +2037,7 @@ void CServerGameDLL::GetMatchmakingTags( char *buf, size_t bufSize )
 	if ( buf > bufBase )
 		buf[ -1 ] = 0;
 #endif
+	Q_strncpy(buf, "Alienbox", bufSize);
 }
 
 void CServerGameDLL::GetMatchmakingGameData( char *buf, size_t bufSize )

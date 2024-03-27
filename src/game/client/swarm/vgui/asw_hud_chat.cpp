@@ -573,12 +573,12 @@ void CHudChat::ShowChatPanel()
 void CHudChat::FadeChatHistory()
 {
 	// don't fade out chat during the briefing/debrief
-	if ( ASWGameRules() && 
-		( ASWGameRules()->GetGameState() == ASW_GS_BRIEFING || ASWGameRules()->GetGameState() == ASW_GS_LAUNCHING ) && GetChatHistory() )
-	{
-		SetBriefingPosition( true );
-	}
-	else
+	//if ( ASWGameRules() && 
+	//	( ASWGameRules()->GetGameState() == ASW_GS_BRIEFING || ASWGameRules()->GetGameState() == ASW_GS_LAUNCHING ) && GetChatHistory() )
+	//{
+	//	SetBriefingPosition( true );
+	//}
+	//else
 	{
 		SetBriefingPosition( false );
 	}

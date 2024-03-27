@@ -27,7 +27,7 @@ ASW_Alien_Class_Entry::ASW_Alien_Class_Entry( const char *szClass, int nHullType
 //       Do not rearrange the order or you will be changing what spawns in all the maps.
 const ASW_Alien_Class_Entry g_Aliens[] =
 {
-	{ "asw_drone", HULL_MEDIUMBIG, Vector( -17, -17, 0 ), Vector( 17, 17, 69 ) },
+	/*{"asw_drone", HULL_MEDIUMBIG, Vector(-17, -17, 0), Vector(17, 17, 69)},
 	{ "asw_buzzer", HULL_TINY_CENTERED, Vector( -10, -10, -10 ), Vector( 10, 10, 10 ) },
 	{ "asw_parasite", HULL_TINY, Vector( -12, -12, 0 ), Vector( 12, 12, 12 ) },
 	{ "asw_shieldbug", HULL_WIDE_SHORT, Vector( -40, -40, 0 ), Vector( 40, 40, 72 ) },
@@ -40,7 +40,7 @@ const ASW_Alien_Class_Entry g_Aliens[] =
 	{ "asw_ranger", HULL_MEDIUMBIG, Vector( -20, -20, 0 ), Vector( 20, 20, 69 ) },
 	{ "asw_mortarbug", HULL_WIDE_SHORT, Vector( -23, -23, 0 ), Vector( 23, 23, 69 ) },
 	{ "asw_shaman", HULL_MEDIUM, Vector( -16, -16, 0 ), Vector( 16, 16, 64 ) },
-	{ "asw_drone_uber", HULL_MEDIUMBIG, Vector( -17, -17, 0 ), Vector( 17, 17, 69 ) },
+	{ "asw_drone_uber", HULL_MEDIUMBIG, Vector( -17, -17, 0 ), Vector( 17, 17, 69 ) },*/
 	{ "npc_antlionguard_normal", HULL_LARGE, Vector( -30, -30, 0 ), Vector( 30, 30, 110 ) },
 	{ "npc_antlionguard_cavern", HULL_LARGE, Vector( -30, -30, 0 ), Vector( 30, 30, 110 ) },
 	{ "npc_antlion", HULL_MEDIUM, Vector( -16, -16, 0 ), Vector( 16, 16, 64 ) },

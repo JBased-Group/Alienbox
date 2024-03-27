@@ -214,7 +214,7 @@ void CASWModeManager::LevelShutdown( void )
 	}
 }
 
-ClientModeASW g_ClientModeNormal[ MAX_SPLITSCREEN_PLAYERS ];
+ClientModeShared g_ClientModeNormal[ MAX_SPLITSCREEN_PLAYERS ];
 
 IClientMode *GetClientModeNormal()
 {
@@ -225,7 +225,7 @@ IClientMode *GetClientModeNormal()
 ClientModeASW* GetClientModeASW()
 {
 	Assert( engine->IsLocalPlayerResolvable() );
-	return &g_ClientModeNormal[ engine->GetActiveSplitScreenPlayerSlot() ];
+	return static_cast<ClientModeASW*>(&g_ClientModeNormal[engine->GetActiveSplitScreenPlayerSlot()]);
 }
 
 // these vgui panels will be closed at various times (e.g. when the level ends/starts)

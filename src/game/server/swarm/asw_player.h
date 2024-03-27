@@ -363,7 +363,7 @@ inline CASW_Player* ToASW_Player( CBasePlayer* pPlayer )
 #ifdef _DEBUG
 	Assert(dynamic_cast<CASW_Player*>(pPlayer) != 0);
 #endif
-	return static_cast<CASW_Player*>( pPlayer );
+	return dynamic_cast<CASW_Player*>( pPlayer );
 }
 
 

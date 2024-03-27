@@ -254,11 +254,11 @@ void CLagCompensationManager::StartLagCompensation( CBasePlayer *player, LagComp
 		 || (gpGlobals->maxClients <= 1)	// no lag compensation in single player
 		 || !sv_unlag.GetBool()				// disabled by server admin
 		 || player->IsBot() 				// not for bots
-#ifdef INFESTED_DLL
-		 || !ToASW_Player( player )->GetNPC() // not for spectators
-#else
+//#ifdef INFESTED_DLL
+		 //|| !ToASW_Player( player )->GetNPC() // not for spectators
+//#else
 		 || player->IsObserver()			// not for spectators
-#endif
+//#endif
 		)
 		return;
 
@@ -336,10 +336,10 @@ void CLagCompensationManager::StartLagCompensation( CBasePlayer *player, LagComp
 		}
 
 #ifdef INFESTED_DLL
-		if ( ToASW_Player( player )->GetNPC() == pEntity )
-		{
-			continue;
-		}
+		//if ( ToASW_Player( player )->GetNPC() == pEntity )
+		//{
+		//	continue;
+		//}
 
 		CBaseEntity *pParent = pEntity->GetMoveParent();
 		// Don't lag compensate parasites that are infesting.

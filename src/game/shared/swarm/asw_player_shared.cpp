@@ -1406,7 +1406,8 @@ ASW_Controls_t CASW_Player::GetASWControls()
 		return ASWC_FIRSTPERSON;
 
 	// briefing camera controls vision during briefing.
-	CAlienSwarm *pGameRules = ASWGameRules();
+	//CAlienSwarm *pGameRules = ASWGameRules();
+	CAlienSwarm* pGameRules = 0;
 	if ( pGameRules && pGameRules->GetGameState() < ASW_GS_INGAME && pGameRules->m_hBriefingCamera )
 		return ASWC_FIRSTPERSON;
 

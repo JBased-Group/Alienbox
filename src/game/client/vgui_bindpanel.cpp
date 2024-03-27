@@ -74,7 +74,7 @@ void CBindPanel::SetBind( const char *szBind, int iSlot )
 void CBindPanel::UpdateKey()
 {
 	MEM_ALLOC_CREDIT();
-	const char *key = g_RD_Steam_Input.Key_LookupBindingEx( *m_szBind == '+' ? m_szBind + 1 : m_szBind, m_iSlot, 0, ASWInput()->ControllerModeActive() );
+	const char *key = g_RD_Steam_Input.Key_LookupBindingEx( *m_szBind == '+' ? m_szBind + 1 : m_szBind, m_iSlot, 0, input->ControllerModeActive() );
 	if ( key )
 	{
 		Q_snprintf( m_szKey, sizeof( m_szKey ), key );

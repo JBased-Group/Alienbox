@@ -60,7 +60,7 @@ void CASW_Prediction::CheckError( int nSlot, C_BasePlayer *player, int commands_
 {
 #if !defined( NO_ENTITY_PREDICTION )
 	// Infesed - check marine prediction error as well as player's:
-	CheckMarineError(nSlot, commands_acknowledged);
+	//CheckMarineError(nSlot, commands_acknowledged);
 #endif
 
 	BaseClass::CheckError( nSlot, player, commands_acknowledged );

@@ -2323,9 +2323,9 @@ C_BaseEntity* C_BasePlayer::GetPotentialUseEntity( void ) const
 float C_BasePlayer::GetFOV( void ) const
 {
 #ifdef INFESTED_DLL
-	CAlienSwarm *pGameRules = ASWGameRules();
-	if ( pGameRules && pGameRules->GetGameState() < ASW_GS_INGAME && pGameRules->m_hBriefingCamera )
-		return pGameRules->m_hBriefingCamera->GetElasticity();
+	//CAlienSwarm *pGameRules = ASWGameRules();
+	//if ( pGameRules && pGameRules->GetGameState() < ASW_GS_INGAME && pGameRules->m_hBriefingCamera )
+	//	return pGameRules->m_hBriefingCamera->GetElasticity();
 #endif
 
 	if ( GetObserverMode() == OBS_MODE_IN_EYE )
@@ -2873,6 +2873,8 @@ bool C_BasePlayer::IsSplitScreenPlayer() const
 
 bool C_BasePlayer::ShouldRegenerateOriginFromCellBits() const
 {
+	return true;
+	/*
 	// Don't use cell bits for local players.
 	// Assumes full update for local players!
 	int nSlot = GET_ACTIVE_SPLITSCREEN_SLOT();
@@ -2881,6 +2883,7 @@ bool C_BasePlayer::ShouldRegenerateOriginFromCellBits() const
 		return false;
 
 	return BaseClass::ShouldRegenerateOriginFromCellBits();
+	*/
 }
 
 
