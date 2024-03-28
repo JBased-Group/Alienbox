@@ -861,8 +861,7 @@ void C_BasePlayer::ReceiveMessage( int classID, bf_read &msg )
 	}
 
 	int messageType = msg.ReadByte();
-
-	switch( messageType )
+	
 	if (messageType == PLAY_PLAYER_JINGLE)
     {
         PlayPlayerJingle();
