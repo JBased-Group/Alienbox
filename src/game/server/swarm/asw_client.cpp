@@ -25,6 +25,7 @@
 #include "engine/IEngineSound.h"
 #include "game_timescale_shared.h"
 #include "tier0/vprof.h"
+#include "abox_player.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -49,7 +50,7 @@ called each time a player is spawned into the game
 void ClientPutInServer( edict_t *pEdict, const char *playername )
 {
 	// Allocate a CBasePlayer for pev, and call spawn
-	CBasePlayer *pPlayer = CBasePlayer::CreatePlayer( "player", pEdict );
+	CABox_Player *pPlayer = CABox_Player::CreatePlayer( "player", pEdict );
 	pPlayer->SetPlayerName( playername );
 
 	// Send the current (or next) timescale
@@ -63,7 +64,7 @@ void ClientPutInServer( edict_t *pEdict, const char *playername )
 
 void ClientActive( edict_t *pEdict, bool bLoadGame )
 {
-	CBasePlayer *pPlayer = ToBasePlayer( CBaseEntity::Instance( pEdict ) );
+	CABox_Player *pPlayer = ToABox_Player( CBaseEntity::Instance( pEdict ) );
 	Assert( pPlayer );
 
 	if ( !pPlayer )

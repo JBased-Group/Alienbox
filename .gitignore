@@ -56,3 +56,6 @@ src/sourcelink.json
 src/utils/*/Debug/
 src/utils/*/Release/
 /src/launcher/Debug
+*.7z
+/src/Debug
+/src/launcher/Release

@@ -578,7 +578,7 @@ public:
 	// physics interactions
 	// mass/size limit set to zero for none
 	static bool				CanPickupObject( CBaseEntity *pObject, float massLimit, float sizeLimit );
-	virtual void			PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize = true ) {}
+	virtual void			PickupObject(CBaseEntity* pObject, bool bLimitMassAndSize = true) { }
 	virtual void			ForceDropOfCarriedPhysObjects( CBaseEntity *pOnlyIfHoldindThis = NULL ) {}
 	virtual float			GetHeldObjectMass( IPhysicsObject *pHeldObject );
 

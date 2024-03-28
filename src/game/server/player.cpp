@@ -451,8 +451,7 @@ BEGIN_ENT_SCRIPTDESC( CBasePlayer, CBaseAnimating, "The player entity." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetPlayerUserID, "GetPlayerUserID", "Get the player's userID." )
 END_SCRIPTDESC();
 
-LINK_ENTITY_TO_CLASS(player, CBasePlayer);
-PRECACHE_REGISTER(player);
+
 
 int giPrecacheGrunt = 0;
 
@@ -2916,7 +2915,7 @@ bool CBasePlayer::CanPickupObject( CBaseEntity *pObject, float massLimit, float 
 
 	return true;
 #else
-	return false;
+	return true;
 #endif
 }
 
@@ -8216,9 +8215,6 @@ void CBasePlayer::InitVCollision( const Vector &vecAbsOrigin, const Vector &vecA
 	// Cleanup any old vphysics stuff.
 	VPhysicsDestroyObject();
 
-#ifdef INFESTED_DLL
-	return;
-#endif
 
 	// in turbo physics players dont have a physics shadow
 	if ( sv_turbophysics.GetBool() )

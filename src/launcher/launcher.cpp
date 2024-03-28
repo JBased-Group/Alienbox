@@ -1,9 +1,9 @@
-#include <windows.h>
 #include <io.h>
 #include <stdio.h>
 #include "platform.h"
 #include "KeyValues.h"
 #include "utlbuffer.h"
+#include "launcher.h"
 
 static char g_szBasedir[MAX_PATH];
 
@@ -24,8 +24,8 @@ bool DesiredApp(int appid)
 void PatchSearchPath(KeyValues* keyv, const char* find, const char* basepath)
 {
 	char replace[MAX_PATH];
-	strncpy(replace, basepath, MAX_PATH);
-	strncat(replace, find, MAX_PATH);
+	strncpy_s(replace, basepath, MAX_PATH);
+	strncat_s(replace, find, MAX_PATH);
 	int findlen = strlen(find);
 	for (KeyValues* value = keyv->GetFirstValue(); value; value = value->GetNextValue())
 	{
@@ -33,7 +33,7 @@ void PatchSearchPath(KeyValues* keyv, const char* find, const char* basepath)
 		if (!str)
 			continue;
 		int len = strlen(str);
-		if (len >= findlen && strcmp(str + len - findlen, find) == 0)
+		if (len >= findlen && strncmp(str + len - findlen, find, findlen) == 0)
 		{
 			value->SetStringValue(replace);
 			return;
@@ -41,6 +41,7 @@ void PatchSearchPath(KeyValues* keyv, const char* find, const char* basepath)
 	}
 }
 
+//xorusr: sum changes in this func
 KeyValues* GetKeyvaluesFromFile(const char* dir, const char* name)
 {
 	FILE* fp = fopen(dir, "r");
@@ -105,7 +106,7 @@ void GetAppManifest(const char* appid, const char* path)
 		PatchSearchPath(searchpaths, "portal2_dlc2", appDir);
 		PatchSearchPath(searchpaths, "update", appDir);
 		break;
-	case 563560: //cs:s
+	case 563560: //asw:rd
 		PatchSearchPath(searchpaths, "reactivedrop", appDir);
 		PatchSearchPath(searchpaths, "platform", appDir);
 		break;
@@ -133,6 +134,13 @@ void GetAppManifest(const char* appid, const char* path)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	char* pPath = getenv("PATH");
+	
+	//xorusr
+	if (!isProcessRunning("steam.exe"))
+	{
+		MessageBoxW(NULL, L"Start the steam client first!", L"Error", MB_OK | MB_ICONERROR);
+		exit(0); // closing the launcher if steam is offline
+	}
 
 	// Use the .EXE name to determine the root directory
 	if (!::GetModuleFileNameA((HINSTANCE)GetModuleHandle(NULL), g_szBasedir, MAX_PATH))
@@ -162,7 +170,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	strncpy(steamLibraryFolders, steamDir, MAX_PATH);
 	strncat(steamLibraryFolders, "\\steamapps\\libraryfolders.vdf", MAX_PATH);
 	KeyValues* libraryfolders = GetKeyvaluesFromFile(steamLibraryFolders, "libraryfolders");
-	char sdk2013dir[MAX_PATH] = "";
+	char aswrddir[MAX_PATH] = "";
 	for (KeyValues* folder = libraryfolders->GetFirstTrueSubKey(); folder; folder = folder->GetNextTrueSubKey())
 	{
 		//Msg("%s %x\n", folder->GetName(), folder->FindKey("apps")->GetFirstValue());
@@ -176,13 +184,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			}
 			if (Q_atoi(appid) == 563560)
 			{
-				strncpy(sdk2013dir, folder->GetString("path"), MAX_PATH);
-				strncat(sdk2013dir, "\\steamapps\\common\\Alien Swarm Reactive Drop\\reactivedrop.exe", MAX_PATH);
+				strncpy(aswrddir, folder->GetString("path"), MAX_PATH);
+				strncat(aswrddir, "\\steamapps\\common\\Alien Swarm Reactive Drop\\reactivedrop.exe", MAX_PATH);
 			}
 		}
 	}
 	libraryfolders->deleteThis();
-	if (sdk2013dir[0] == '\x00')
+	if (aswrddir[0] == '\x00')
 	{
 		MessageBoxA(0, "Install Alien Swarm Reactive Drop to play this.", "Launcher error", MB_OK);
 	}
@@ -193,6 +201,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	strncat(gameParam, "alienbox\" ", 1024);
 	strncat(gameParam, lpCmdLine, 1024);
 
-	ShellExecuteA(0, "open", sdk2013dir, gameParam, steamDir, SW_SHOWDEFAULT);
+	ShellExecuteA(0, "open", aswrddir, gameParam, steamDir, SW_SHOWDEFAULT);
 	return 0;
 }

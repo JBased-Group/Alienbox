@@ -377,7 +377,7 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 END_PREDICTION_DATA()
 
 
-LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
+
 
 
 // -------------------------------------------------------------------------------- //
@@ -462,11 +462,9 @@ void C_BasePlayer::Spawn( void )
 
 	m_iFOV	= 0;	// init field of view.
 
-    SetModel( "models/player.mdl" );
-
 	Precache();
 
-	SetThink(NULL);
+	SetThink(nullptr); //xorusr: use nullptr instead of NULL plz
 
 	SharedSpawn();
 
@@ -599,29 +597,23 @@ void C_BasePlayer::SetViewAngles( const QAngle& ang )
 
 surfacedata_t* C_BasePlayer::GetGroundSurface()
 {
-	//
-	// Find the name of the material that lies beneath the player.
-	//
-	Vector start, end;
-	VectorCopy( GetAbsOrigin(), start );
-	VectorCopy( start, end );
+	Vector start = GetAbsOrigin();
+	Vector end = start;
 
 	// Straight down
 	end.z -= 64;
 
-	// Fill in default values, just in case.
-	
 	Ray_t ray;
-	ray.Init( start, end, GetPlayerMins(), GetPlayerMaxs() );
+	ray.Init(start, end, GetPlayerMins(), GetPlayerMaxs());
 
-	trace_t	trace;
-	UTIL_TraceRay( ray, MASK_PLAYERSOLID_BRUSHONLY, this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
+	trace_t trace;
+	UTIL_TraceRay(ray, MASK_PLAYERSOLID_BRUSHONLY, this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace);
 
-	if ( trace.fraction == 1.0f )
-		return NULL;	// no ground
-	
-	return physprops->GetSurfaceData( trace.surface.surfaceProps );
-}
+	if (trace.fraction == 1.0f)
+		return nullptr; // no ground
+
+	return physprops->GetSurfaceData(trace.surface.surfaceProps);
+}//xorusr: nullptr instead of NULL, refactoring of this cringe
 
 
 //-----------------------------------------------------------------------------
@@ -645,17 +637,14 @@ bool C_BasePlayer::IsPlayerDead()
 //-----------------------------------------------------------------------------
 void C_BasePlayer::SetVehicleRole( int nRole )
 {
-	if ( !IsInAVehicle() )
-		return;
-
 	// HL2 has only a player in a vehicle.
-	if ( nRole > VEHICLE_ROLE_DRIVER )
+	if ( !IsInAVehicle() || nRole > VEHICLE_ROLE_DRIVER )
 		return;
 
 	char szCmd[64];
-	Q_snprintf( szCmd, sizeof( szCmd ), "vehicleRole %i\n", nRole );
-	engine->ServerCmd( szCmd );
-}
+	Q_snprintf(szCmd, sizeof(szCmd), "vehicleRole %i\n", nRole);
+	engine->ServerCmd(szCmd);
+}//xorusr: refactoring
 
 //-----------------------------------------------------------------------------
 // Purpose: Store original ammo data to see what has changed
@@ -840,10 +829,10 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 		ResetLatched();
 	}
 #ifdef DEMOPOLISH_ENABLED
-	if ( engine->IsRecordingDemo() && 
-		 IsDemoPolishRecording() )
+	if ( engine->IsRecordingDemo() &&  IsDemoPolishRecording() )
 	{
 		m_bBonePolishSetup = true;
+
 		matrix3x4a_t dummyBones[MAXSTUDIOBONES];
 		C_BaseEntity::SetAbsQueriesValid( true );
 		ForceSetupBonesAtTime( dummyBones, gpGlobals->curtime );
@@ -874,12 +863,11 @@ void C_BasePlayer::ReceiveMessage( int classID, bf_read &msg )
 	int messageType = msg.ReadByte();
 
 	switch( messageType )
-	{
-		case PLAY_PLAYER_JINGLE:
-			PlayPlayerJingle();
-			break;
-	}
-}
+	if (messageType == PLAY_PLAYER_JINGLE)
+    {
+        PlayPlayerJingle();
+    }
+}//xorusr: let's use IF instead of SWITCH, because we have only one condition
 
 void C_BasePlayer::OnRestore()
 {
@@ -889,10 +877,9 @@ void C_BasePlayer::OnRestore()
 	{
 		ACTIVE_SPLITSCREEN_PLAYER_GUARD_ENT( this );
 
-		// debounce the attack key, for if it was used for restore
-		input->ClearInputButton( IN_ATTACK | IN_ATTACK2 );
-		// GetButtonBits() has to be called for the above to take effect
-		input->GetButtonBits( false );
+		
+		input->ClearInputButton( IN_ATTACK | IN_ATTACK2 ); // debounce the attack key, for if it was used for restore
+		input->GetButtonBits( false ); // GetButtonBits() has to be called for the above to take effect
 	}
 
 	// For ammo history icons to current value so they don't flash on level transtions
@@ -1107,9 +1094,8 @@ bool C_BasePlayer::CreateMove( float flInputSampleTime, CUserCmd *pCmd )
 	}
 	else 
 	{
-#ifndef _X360
+
 		if ( joy_autosprint.GetBool() )
-#endif
 		{
 			if ( input->KeyState( &in_joyspeed ) != 0.0f )
 			{
