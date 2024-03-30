@@ -1017,7 +1017,7 @@ void DisableNoClip( CBasePlayer *pPlayer )
 	UTIL_LogPrintf( "%s left NOCLIP mode\n", GameLogSystem()->FormatPlayer( pPlayer ) );
 }
 
-#ifdef INFESTED_DLL
+#if defined(INFESTED_DLL) && 0
 void EnableRDNoClip( CASW_Inhabitable_NPC *pNPC )
 {
 	// Disengage from hierarchy
@@ -1097,6 +1097,31 @@ CON_COMMAND_F( rd_noclip, "Toggle. Marine becomes non-solid and flies.  Optional
 	}
 }
 #endif // INFESTED_DLL
+
+
+void CC_Player_NoClip( void )
+{
+	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() ); 
+	if ( !pPlayer )
+		return;
+
+	CPlayerState *pl = pPlayer->PlayerData();
+	Assert( pl );
+
+	if (pPlayer->GetMoveType() != MOVETYPE_NOCLIP)
+	{
+		EnableNoClip( pPlayer );
+		return;
+	}
+
+	pPlayer->RemoveEFlags( EFL_NOCLIP_ACTIVE );
+	pPlayer->SetMoveType( MOVETYPE_WALK );
+
+	Vector oldorigin = pPlayer->GetAbsOrigin();
+	ClientPrint( pPlayer, HUD_PRINTCONSOLE, "noclip OFF\n");
+}
+
+static ConCommand noclip("noclip", CC_Player_NoClip, "Toggle. Player becomes non-solid and flies.");
 
 CON_COMMAND_F( ent_setpos, "Move entity to position", FCVAR_CHEAT )
 {

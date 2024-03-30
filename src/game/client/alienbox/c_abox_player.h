@@ -14,6 +14,7 @@ public:
 	C_ABox_Player();
 	~C_ABox_Player();
 	virtual int DrawModel(int flags, const RenderableInstance_t& instance);
+	virtual bool	CreateMove(float flInputSampleTime, CUserCmd* pCmd);
 };
 
 inline C_ABox_Player* ToABox_Player(CBaseEntity* pEntity)

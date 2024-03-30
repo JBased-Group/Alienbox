@@ -163,20 +163,6 @@ sampler AlphaMaskSampler		: register( s11 );	// alpha
 #endif
 #endif
 
-#if defined( _X360 ) && FLASHLIGHT
-sampler FlashlightSampler		: register( s13 );
-sampler ShadowDepthSampler		: register( s14 );
-sampler RandRotSampler			: register( s15 );
-#endif
-
-#if defined( _X360 )
-	// The compiler runs out of temp registers in certain combos, increase the maximum for now
-	#if ( BASETEXTURE2 && (BUMPMAP == 2) && CUBEMAP && NORMALMAPALPHAENVMAPMASK && DIFFUSEBUMPMAP && FLASHLIGHT && SHADER_SRGB_READ )
-		[maxtempreg(39)]
-	#elif ( SHADER_SRGB_READ == 1 )
-		[maxtempreg(36)]
-	#endif
-#endif
 
 #if LIGHTING_PREVIEW == 2
 LPREVIEW_PS_OUT main( PS_INPUT i ) : COLOR
@@ -184,6 +170,7 @@ LPREVIEW_PS_OUT main( PS_INPUT i ) : COLOR
 float4 main( PS_INPUT i ) : COLOR
 #endif
 {
+	//return float4(i.lightmapTexCoord3.xy,i.lightmapTexCoord1And2.x,1.0f);
 	bool bBaseTexture2 = BASETEXTURE2 ? true : false;
 	bool bDetailTexture = DETAILTEXTURE ? true : false;
 	bool bBumpmap = BUMPMAP ? true : false;
@@ -212,103 +199,7 @@ float4 main( PS_INPUT i ) : COLOR
 
 	float3 coords = baseTexCoords;
 
-#if PARALLAX_MAPPING
-	{
-		// code converted from the ParallaxTest shader:
-		int nMinSamples = g_ParallaxMappingControl.z;
-		int nMaxSamples = g_ParallaxMappingControl.w;
 
-		//  Normalize the interpolated vectors:
-		float3 vViewTSFull = mul( worldVertToEyeVector, transpose( tangenttranspose ) );
-		float2 vViewTS = normalize( vViewTSFull.xy );
-		float3 vViewWS = normalize( worldVertToEyeVector );
-		float3 vNormalWS = normalize( i.tangentSpaceTranspose[2] );
-
-		// The length of this vector determines the furthest amount of displacement:
-		float fLength = length( vViewTSFull );
-		float fParallaxLength = sqrt( fLength * fLength - vViewTSFull.z * vViewTSFull.z ) / vViewTSFull.z;
-
-		// Compute the actual reverse parallax displacement vector:
-		float2 vParallaxOffsetTS = vViewTS * fParallaxLength * HEIGHT_SCALE;
-
-		// Compute all the derivatives:
-		float2 dx = ddx( baseTexCoords );
-		float2 dy = ddy( baseTexCoords );
-
-		//===============================================//
-		// Parallax occlusion mapping offset computation //
-		//===============================================//
-
-		// Utilize dynamic flow control to change the number of samples per ray
-		// depending on the viewing angle for the surface. Oblique angles require
-		// smaller step sizes to achieve more accurate precision for computing displacement.
-		// We express the sampling rate as a linear function of the angle between
-		// the geometric normal and the view direction ray:
-		int nNumSteps = ( int )lerp( nMaxSamples, nMinSamples, dot( vViewWS, vNormalWS ) );
-
-		// Intersect the view ray with the height field profile along the direction of
-		// the parallax offset ray (computed in the vertex shader. Note that the code is
-		// designed specifically to take advantage of the dynamic flow control constructs
-		// in HLSL and is very sensitive to specific syntax. When converting to other examples,
-		// if still want to use dynamic flow control in the resulting assembly shader,
-		// care must be applied.
-		//
-		// In the below steps we approximate the height field profile as piecewise linear
-		// curve. We find the pair of endpoints between which the intersection between the
-		// height field profile and the view ray is found and then compute line segment
-		// intersection for the view ray and the line segment formed by the two endpoints.
-		// This intersection is the displacement offset from the original texture coordinate.
-		// See the above paper for more details about the process and derivation.
-		//
-		float fCurrHeight = 0.0;
-		float fStepSize = 1.0 / ( float )nNumSteps;
-		float fPrevHeight = 1.0;
-		float fNextHeight = 0.0;
-
-		int    nStepIndex = 0;
-
-		float2 vTexOffsetPerStep = fStepSize * vParallaxOffsetTS;
-		float2 vTexCurrentOffset = baseTexCoords;
-		float  fCurrentBound = 1.0;
-
-		float2 pt1 = 0;
-		float2 pt2 = 0;
-
-		float2 texOffset2 = 0;
-
-		while ( nStepIndex < nNumSteps )
-		{
-			vTexCurrentOffset -= vTexOffsetPerStep;
-
-			// Sample height map which in this case is stored in the alpha channel of the normal map:
-			fCurrHeight = tex2Dgrad( BumpmapSampler, vTexCurrentOffset, dx, dy ).a;
-
-			fCurrentBound -= fStepSize;
-
-			if ( fCurrHeight > fCurrentBound )
-			{
-				pt1 = float2( fCurrentBound, fCurrHeight );
-				pt2 = float2( fCurrentBound + fStepSize, fPrevHeight );
-
-				texOffset2 = vTexCurrentOffset - vTexOffsetPerStep;
-
-				nStepIndex = nNumSteps + 1;
-			}
-			else
-			{
-				nStepIndex++;
-				fPrevHeight = fCurrHeight;
-			}
-		}   // End of while ( nStepIndex < nNumSteps )
-
-		float fDelta2 = pt2.x - pt2.y;
-		float fDelta1 = pt1.x - pt1.y;
-		float fParallaxAmount = ( pt1.x * fDelta2 - pt2.x * fDelta1 ) / ( fDelta2 - fDelta1 );
-
-		// The computed texture offset for the displaced point on the pseudo-extruded surface:
-		coords.xy -= vParallaxOffsetTS * ( 1 - fParallaxAmount );
-	}
-#endif
 
 	float2 detailTexCoord = 0.0f;
 	float2 bumpmapTexCoord = 0.0f;
@@ -326,11 +217,6 @@ float4 main( PS_INPUT i ) : COLOR
 	bumpmap2TexCoord = i.ENVMAPMASKCOORDS;
 #endif
 
-	if ( PARALLAX_MAPPING )
-	{
-		detailTexCoord = 0;
-		bumpmapTexCoord = coords;
-	}
 
 	GetBaseTextureAndNormal( BaseTextureSampler, BaseTextureSampler2, BumpmapSampler,
 							 bBaseTexture2, bBumpmap || bNormalMapAlphaEnvmapMask, 
@@ -342,10 +228,11 @@ float4 main( PS_INPUT i ) : COLOR
 
 	float3 vThisReallyIsANormal = vNormal;
 #endif
-
+	
 	float3 lightmapColor1 = float3( 1.0f, 1.0f, 1.0f );
 	float3 lightmapColor2 = float3( 1.0f, 1.0f, 1.0f );
 	float3 lightmapColor3 = float3( 1.0f, 1.0f, 1.0f );
+	float3 lightmapSDF = float3( 1.0f, 1.0f, 1.0f );
 #if LIGHTING_PREVIEW == 0
 	if( bBumpmap && bDiffuseBumpmap )
 	{
@@ -362,7 +249,10 @@ float4 main( PS_INPUT i ) : COLOR
 	else
 	{
 		float2 bumpCoord1 = ComputeLightmapCoordinates( i.lightmapTexCoord1And2, i.lightmapTexCoord3.xy );
-		lightmapColor1 = LightMapSample( LightmapSampler, bumpCoord1 );
+		lightmapColor1 = LightMapSample( LightmapSampler, bumpCoord1);
+		lightmapSDF = LightMapSample( LightmapSampler, bumpCoord1 + i.lightmapTexCoord3.xy/2);
+		lightmapColor1 *= clamp((lightmapSDF.x-0.03)*50,0,1) + clamp((lightmapSDF.y-0.03)*50,0,1) + clamp((lightmapSDF.z-0.03)*50,0,1);
+		//lightmapColor1 = LightMapSample( LightmapSampler, bumpCoord1 + i.lightmapTexCoord3.xy/2);
 	}
 #endif
 
@@ -611,37 +501,6 @@ float4 main( PS_INPUT i ) : COLOR
 #endif
 
 	float3 diffuseComponent = albedo * diffuseLighting;
-
-#if defined( _X360 ) && FLASHLIGHT
-
-	// ssbump doesn't pass a normal to the flashlight...it computes shadowing a different way
-#if ( BUMPMAP == 2 )
-	bool bHasNormal = false;
-
-	float3 worldPosToLightVector = g_FlashlightPos - worldPos;
-
-	float3 tangentPosToLightVector;
-	tangentPosToLightVector.x = dot( worldPosToLightVector, tangenttranspose[0] );
-	tangentPosToLightVector.y = dot( worldPosToLightVector, tangenttranspose[1] );
-	tangentPosToLightVector.z = dot( worldPosToLightVector, tangenttranspose[2] );
-
-	tangentPosToLightVector = normalize( tangentPosToLightVector );
-	float nDotL = saturate( vSSBumpVector.x*dot( tangentPosToLightVector, bumpBasis[0]) +
-							vSSBumpVector.y*dot( tangentPosToLightVector, bumpBasis[1]) +
-							vSSBumpVector.z*dot( tangentPosToLightVector, bumpBasis[2]) );
-#else
-	bool bHasNormal = true;
-	float nDotL = 1.0f;
-#endif
-
-	bool bShadows = FLASHLIGHTSHADOWS ? true : false;
-	float3 flashlightColor = DoFlashlight( g_FlashlightPos, worldPos, i.flashlightSpacePos,
-		worldSpaceNormal, g_FlashlightAttenuationFactors.xyz, 
-		g_FlashlightAttenuationFactors.w, FlashlightSampler, ShadowDepthSampler,
-		RandRotSampler, 0, bShadows, false, i.vProjPos.xy / i.vProjPos.w, false, g_ShadowTweaks, bHasNormal );
-
-	diffuseComponent = albedo.xyz * ( diffuseLighting + ( flashlightColor * nDotL * g_TintValuesWithoutLightmapScale.rgb ) );
-#endif
 
 	if( bSelfIllum )
 	{

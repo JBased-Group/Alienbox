@@ -611,13 +611,7 @@ void DrawLightmappedGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, 
 // 					numTexCoords = 1;
 // 				}
 // 				else
-				{
-					numTexCoords = 2;
-					if( hasBump )
-					{
-						numTexCoords = 3;
-					}
-				}
+				numTexCoords = 3;
 		
 				int nLightingPreviewMode = IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER0 ) + 2 * IS_FLAG2_SET( MATERIAL_VAR2_USE_GBUFFER1 );
 
@@ -659,17 +653,17 @@ void DrawLightmappedGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, 
 					SET_STATIC_PIXEL_SHADER_COMBO( BASEALPHAENVMAPMASK, hasBaseAlphaEnvmapMask );
 					SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM, hasSelfIllum );
 					SET_STATIC_PIXEL_SHADER_COMBO( NORMALMAPALPHAENVMAPMASK, hasNormalMapAlphaEnvmapMask );
-					SET_STATIC_PIXEL_SHADER_COMBO( BASETEXTURENOENVMAP, params[info.m_nBaseTextureNoEnvmap]->GetIntValue() );
-					SET_STATIC_PIXEL_SHADER_COMBO( BASETEXTURE2NOENVMAP, params[info.m_nBaseTexture2NoEnvmap]->GetIntValue() );
+					SET_STATIC_PIXEL_SHADER_COMBO( BASETEXTURENOENVMAP, 0 );
+					SET_STATIC_PIXEL_SHADER_COMBO( BASETEXTURE2NOENVMAP, 0 );
 					SET_STATIC_PIXEL_SHADER_COMBO( WARPLIGHTING, hasLightWarpTexture );
 					SET_STATIC_PIXEL_SHADER_COMBO( FANCY_BLENDING, bHasBlendModulateTexture );
 					SET_STATIC_PIXEL_SHADER_COMBO( MASKEDBLENDING, bMaskedBlending );
 					SET_STATIC_PIXEL_SHADER_COMBO( SEAMLESS, bSeamlessMapping );
-					SET_STATIC_PIXEL_SHADER_COMBO( OUTLINE, bHasOutline );
-					SET_STATIC_PIXEL_SHADER_COMBO( SOFTEDGES, bHasSoftEdges );
-					SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, nDetailBlendMode );
+					SET_STATIC_PIXEL_SHADER_COMBO( OUTLINE, false );
+					SET_STATIC_PIXEL_SHADER_COMBO( SOFTEDGES, false );
+					SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, 0 );
 					SET_STATIC_PIXEL_SHADER_COMBO( PARALLAXCORRECT, hasParallaxCorrection );
-					SET_STATIC_PIXEL_SHADER_COMBO( PARALLAX_MAPPING, bParallaxMapping );
+					//SET_STATIC_PIXEL_SHADER_COMBO( PARALLAX_MAPPING, bParallaxMapping );
 					SET_STATIC_PIXEL_SHADER_COMBO( SHADER_SRGB_READ, bShaderSrgbRead );
 					SET_STATIC_PIXEL_SHADER_COMBO( LIGHTING_PREVIEW, nLightingPreviewMode );
 					SET_STATIC_PIXEL_SHADER( lightmappedgeneric_ps30 );
@@ -725,7 +719,7 @@ void DrawLightmappedGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, 
 						// Parallax cubemaps enabled for 2_0b and onwards
 						SET_STATIC_PIXEL_SHADER_COMBO( PARALLAXCORRECT, hasParallaxCorrection );
 
-						SET_STATIC_PIXEL_SHADER_COMBO( PARALLAX_MAPPING, bParallaxMapping );
+						//SET_STATIC_PIXEL_SHADER_COMBO( PARALLAX_MAPPING, bParallaxMapping );
 						SET_STATIC_PIXEL_SHADER_COMBO( SHADER_SRGB_READ, bShaderSrgbRead );
 						SET_STATIC_PIXEL_SHADER_COMBO( LIGHTING_PREVIEW, nLightingPreviewMode );
 						SET_STATIC_PIXEL_SHADER( lightmappedgeneric_ps20b );

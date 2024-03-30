@@ -1,4 +1,4 @@
-//========= Copyright Valve Corporation, All rights reserved. ============//
+﻿//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -48,30 +48,56 @@ private:
 
 bool DM_RayDispIntersectTest( CVRADDispColl *pTree, Vector& rayStart, Vector& rayEnd, CToolTrace *pTrace );
 void DM_ClipBoxToBrush( CToolTrace *trace, const Vector & mins, const Vector & maxs, const Vector& p1, const Vector& p2, dbrush_t *brush );
-
+void DM_ClipSphereToBrush(CToolTrace* trace, float radius, const Vector& p1, const Vector& p2, dbrush_t* brush);
 //=============================================================================
 
-float TraceLeafBrushes( int leafIndex, const Vector &start, const Vector &end, CBaseTrace &traceOut )
+float TraceLeafBrushes(int leafIndex, const Vector &start, const Vector &end, CBaseTrace &traceOut)
 {
-	dleaf_t *pLeaf = dleafs + leafIndex;
+    dleaf_t *pLeaf = dleafs + leafIndex;
+    CToolTrace trace = {};
+    trace.ispoint = true;
+    trace.startsolid = false;
+    trace.fraction = 1.0;
+
+    for (int i = 0; i < pLeaf->numleafbrushes; i++)
+    {
+        int brushnum = dleafbrushes[pLeaf->firstleafbrush + i];
+        dbrush_t *b = &dbrushes[brushnum];
+        if (!(b->contents & MASK_OPAQUE))
+            continue;
+
+        Vector zeroExtents = vec3_origin;
+        DM_ClipBoxToBrush(&trace, zeroExtents, zeroExtents, start, end, b);
+        if (trace.fraction != 1.0 || trace.startsolid)
+        {
+            if (trace.startsolid)
+                trace.fraction = 0.0f;
+            traceOut = trace;
+            return trace.fraction;
+        }
+    }
+    traceOut = trace;
+    return 1.0f;
+}
+
+
+float SphereTraceLeafBrushes(int leafIndex, const Vector& start, const Vector& end, float radius, CBaseTrace& traceOut)
+{
 	CToolTrace trace;
-	memset( &trace, 0, sizeof(trace) );
-	trace.ispoint = true;
+	memset(&trace, 0, sizeof(trace));
 	trace.startsolid = false;
 	trace.fraction = 1.0;
 
-	for ( int i = 0; i < pLeaf->numleafbrushes; i++ )
+	for (int i = 0; i < numbrushes; i++)
 	{
-		int brushnum = dleafbrushes[pLeaf->firstleafbrush+i];
-		dbrush_t *b = &dbrushes[brushnum];
-		if ( !(b->contents & MASK_OPAQUE))
+		dbrush_t* b = &dbrushes[i];
+		if (!(b->contents & MASK_OPAQUE))
 			continue;
 
-		Vector zeroExtents = vec3_origin;
-		DM_ClipBoxToBrush( &trace, zeroExtents, zeroExtents, start, end, b);
-		if ( trace.fraction != 1.0 || trace.startsolid )
+		DM_ClipSphereToBrush(&trace, radius, start, end, b);
+		if (trace.fraction != 1.0 || trace.startsolid)
 		{
-			if ( trace.startsolid )
+			if (trace.startsolid)
 				trace.fraction = 0.0f;
 			traceOut = trace;
 			return trace.fraction;
@@ -341,6 +367,109 @@ void DM_ClipBoxToBrush( CToolTrace *trace, const Vector& mins, const Vector& max
 			trace->plane.normal = clipplane->normal;
 			trace->plane.type = clipplane->type;
 			if (leadside->texinfo!=-1)
+				trace->surface = &texinfo[leadside->texinfo];
+			else
+				trace->surface = 0;
+			trace->contents = brush->contents;
+		}
+	}
+}
+
+/*
+================
+DM_ClipSphereToBrush
+================
+*/
+void DM_ClipSphereToBrush(CToolTrace* trace, float radius, const Vector& p1, const Vector& p2,
+	dbrush_t* brush)
+{
+	dplane_t* plane, * clipplane;
+	float		dist;
+	Vector		ofs;
+	float		d1, d2;
+	float		f;
+	dbrushside_t* side, * leadside;
+
+	if (!brush->numsides)
+		return;
+
+	float enterfrac = NEVER_UPDATED;
+	float leavefrac = 1.f;
+	clipplane = NULL;
+
+	bool getout = false;
+	bool startout = false;
+	leadside = NULL;
+
+	
+	for (int i = 0; i < brush->numsides; ++i)
+	{
+		side = &dbrushsides[brush->firstside + i];
+		plane = dplanes + side->planenum;
+
+		// FIXME: special case for axial
+
+		// special point case
+		// don't ray trace against bevel planes
+		//if (side->bevel == 1)
+		//	continue;
+
+		dist = plane->dist;
+		d1 = DotProduct(p1, plane->normal) - dist;
+		d2 = DotProduct(p2, plane->normal) - dist - radius;
+
+		// if completely in front of face, no intersection
+		if (d1 > 0 && d2 > 0)
+			return;
+
+		if (d2 > 0)
+			getout = true;	// endpoint is not in solid
+		if (d1 > -DIST_EPSILON)
+			startout = true;
+
+		if (d1 <= 0 && d2 <= 0)
+			continue;
+
+		// crosses face
+		if (d1 > d2)
+		{	// enter
+			f = (d1 - DIST_EPSILON) / (d1 - d2);
+			if (f > enterfrac)
+			{
+				enterfrac = f;
+				clipplane = plane;
+				leadside = side;
+			}
+		}
+		else
+		{	// leave
+			f = (d1 + DIST_EPSILON) / (d1 - d2);
+			if (f < leavefrac)
+				leavefrac = f;
+		}
+	}
+	
+
+
+
+	if (!startout)
+	{	// original point was inside brush
+		trace->startsolid = true;
+		if (!getout)
+			trace->allsolid = true;
+		return;
+	}
+	if (enterfrac < leavefrac)
+	{
+		if (enterfrac > NEVER_UPDATED && enterfrac < trace->fraction)
+		{
+			if (enterfrac < 0)
+				enterfrac = 0;
+			trace->fraction = enterfrac;
+			trace->plane.dist = clipplane->dist;
+			trace->plane.normal = clipplane->normal;
+			trace->plane.type = clipplane->type;
+			if (leadside->texinfo != -1)
 				trace->surface = &texinfo[leadside->texinfo];
 			else
 				trace->surface = 0;

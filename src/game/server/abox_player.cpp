@@ -542,8 +542,17 @@ float CGrabController::GetSavedMass(IPhysicsObject* pObject)
 
 class CPlayerPickupController : public CBaseEntity
 {
-	DECLARE_CLASS(CPlayerPickupController, CBaseEntity);
 public:
+	DECLARE_CLASS(CPlayerPickupController, CBaseEntity);
+	DECLARE_SERVERCLASS();
+	CPlayerPickupController() : BaseClass()
+	{
+
+	}
+	~CPlayerPickupController()
+	{
+
+	}
 	void Init(CBasePlayer* pPlayer, CBaseEntity* pObject);
 	void Shutdown(bool bThrown = false);
 	bool OnControls(CBaseEntity* pControls) { return true; }
@@ -564,6 +573,9 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS(player_pickup, CPlayerPickupController);
+
+IMPLEMENT_SERVERCLASS_ST(CPlayerPickupController, DT_PlayerPickupController)
+END_SEND_TABLE()
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -677,15 +689,6 @@ void CPlayerPickupController::Use(CBaseEntity* pActivator, CBaseEntity* pCaller,
 			return;
 		}
 
-#if STRESS_TEST
-		vphysics_objectstress_t stress;
-		CalculateObjectStress(pPhys, pAttached, &stress);
-		if (stress.exertedStress > 250)
-		{
-			Shutdown();
-			return;
-		}
-#endif
 		// +ATTACK will throw phys objects
 		if (m_pPlayer->m_nButtons & IN_ATTACK)
 		{
@@ -701,6 +704,18 @@ void CPlayerPickupController::Use(CBaseEntity* pActivator, CBaseEntity* pCaller,
 			AngularImpulse aVel = RandomAngularImpulse(-10, 10) * massFactor;
 			pPhys->ApplyTorqueCenter(aVel);
 			return;
+		}
+		if (m_pPlayer->m_nButtons & IN_RELOAD)
+		{
+			matrix3x4_t xrot, yrot, currot;
+			AngleMatrix(m_grabController.m_attachedAnglesPlayerSpace, currot);
+			MatrixBuildRotationAboutAxis(Vector(0, 0, 1), (float)m_pPlayer->GetLastUserCommand()->mousedx * 0.05,xrot);
+			MatrixBuildRotationAboutAxis(Vector(0, 1, 0), (float)m_pPlayer->GetLastUserCommand()->mousedy * 0.05,yrot);
+			ConcatTransforms(xrot, yrot, yrot);
+			ConcatTransforms(yrot, currot, currot);
+			MatrixAngles(currot, m_grabController.m_attachedAnglesPlayerSpace);
+
+			
 		}
 
 		if (useType == USE_SET)

@@ -1086,8 +1086,6 @@
     <ClCompile Include="BlurFilterY.cpp" />
     <ClCompile Include="BufferClearObeyStencil_dx9.cpp" />
     <ClCompile Include="cable_dx9.cpp" />
-    <ClCompile Include="character_dx9.cpp" />
-    <ClCompile Include="character_dx9_helper.cpp" />
     <ClCompile Include="cloak.cpp" />
     <ClCompile Include="cloak_blended_pass_helper.cpp" />
     <ClCompile Include="cloak_dx9_helper.cpp" />

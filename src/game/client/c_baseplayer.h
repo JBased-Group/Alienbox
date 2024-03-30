@@ -565,6 +565,7 @@ protected:
 	float			m_flFreezeFrameDistance;
 	bool			m_bWasFreezeFraming; 
 	float			m_flDeathTime;		// last time player died
+	EHANDLE			m_hUseEntity;
 
 
 private:
@@ -574,7 +575,6 @@ private:
 
 	// Vehicle stuff.
 	EHANDLE			m_hOldVehicle;
-	EHANDLE			m_hUseEntity;
 	
 	CInterpolatedVar< Vector >	m_iv_vecViewOffset;
 

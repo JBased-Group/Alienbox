@@ -149,7 +149,7 @@ int CASW_Background_Movie::SetTextureMaterial()
 
 void CASW_Background_Movie::Update( bool bForce )
 {
-	if ( engine->IsConnected() && ASWGameRules() )
+	if ( engine->IsConnected() && ASWGameRules() && 0 )
 	{
 		int nGameState = ASWGameRules()->GetGameState();
 		if ( nGameState >= ASW_GS_DEBRIEF && ASWGameRules()->GetMissionSuccess() )

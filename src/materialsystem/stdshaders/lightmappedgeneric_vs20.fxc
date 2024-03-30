@@ -188,6 +188,7 @@ VS_OUTPUT main( const VS_INPUT v )
 	else
 	{
 		o.lightmapTexCoord1And2.xy = v.vLightmapTexCoord;
+		o.lightmapTexCoord3.xy = v.vLightmapTexCoordOffset;
 	}
 
 	if( g_UseSeparateEnvmapMask || g_BumpMask )

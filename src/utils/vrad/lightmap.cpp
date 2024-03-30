@@ -782,7 +782,7 @@ bool BuildFacesamples( lightinfo_t *pLightInfo, facelight_t *pFaceLight )
 	//
 	// copy over samples
 	//
-	pFaceLight->numsamples = pSamples - samples;
+	pFaceLight->numsamples = (pSamples - samples);
 	pFaceLight->sample = ( sample_t* )calloc( pFaceLight->numsamples, sizeof( *pFaceLight->sample ) );
 	if( !pFaceLight->sample )
 		return false;
@@ -852,7 +852,9 @@ bool BuildFaceLuxels( lightinfo_t *pLightInfo, facelight_t *pFaceLight )
 
 	// calcuate actual luxel points
 	pFaceLight->numluxels = width * height;
+	pFaceLight->width = width;
 	pFaceLight->luxel = ( Vector* )calloc( pFaceLight->numluxels, sizeof( *pFaceLight->luxel ) );
+	pFaceLight->luxelNormals = ( Vector* )calloc( pFaceLight->numluxels, sizeof( *pFaceLight->luxelNormals ) );
 	if( !pFaceLight->luxel )
 		return false;
 
@@ -861,6 +863,7 @@ bool BuildFaceLuxels( lightinfo_t *pLightInfo, facelight_t *pFaceLight )
 		for( int s = 0; s < width; s++ )
 		{
 			LuxelSpaceToWorld( pLightInfo, s, t, pFaceLight->luxel[s+t*width] );
+			pFaceLight->luxelNormals[s+t*width] = pLightInfo->facenormal;
 		}
 	}
 
@@ -2527,6 +2530,7 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 {
 	SSE_sampleLightOutput_t out;
 
+	int lightNum = 0;
 	// Iterate over all direct lights and add them to the particular sample
 	for (directlight_t *dl = activelights; dl != NULL; dl = dl->next)
 	{	    
@@ -2541,8 +2545,8 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 				skipLight = false;
 			}
 		}
-		if ( skipLight )
-			continue;
+		//if ( skipLight )
+		//	continue;
 
 		GatherSampleLightSSE( out, dl, info.m_FaceNum, info.m_Points, info.m_PointNormals, info.m_NormalCount, info.m_iThread );
 		
@@ -2558,12 +2562,12 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 				skipLight = false;
 			}
 		}
-		if ( skipLight )
-			continue;
+		//if ( skipLight )
+		//	continue;
 
 		// Figure out the lightstyle for this particular sample
 		int lightStyleIndex = FindOrAllocateLightstyleSamples( info.m_pFace, info.m_pFaceLight, 
-			dl->light.style, info.m_NormalCount );
+			/*dl->light.style*/ 0, info.m_NormalCount);
 		if (lightStyleIndex < 0)
 		{
 			if (info.m_WarnFace != info.m_FaceNum)
@@ -2588,7 +2592,7 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 					info.m_LightmapSize, SubFloat( fxdot[0], i ), info.m_iThread );
 			}
 		}
-
+		
 		for( int n = 0; n < info.m_NormalCount; ++n )
 		{
 			for ( int i = 0; i < numSamples; i++ )
@@ -2596,6 +2600,58 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 				pLightmaps[n][sampleIdx + i].AddLight( SubFloat( fxdot[n], i ), dl->light.intensity, SubFloat( out.m_flSunAmount, i ) );
 			}
 		}
+		/*
+		int SDFIndex = FindOrAllocateLightstyleSamples(info.m_pFace, info.m_pFaceLight,
+			(lightNum>>2) + 1, info.m_NormalCount);
+		if (SDFIndex < 0)
+		{
+			continue;
+		}
+
+		
+		int SDFchannel = lightNum % 4;
+		//if(info.m_pFaceLight->sample[sampleIdx].pos)
+		int width = info.m_pFace->m_LightmapTextureSizeInLuxels[0] / 2;
+		int height = info.m_pFace->m_LightmapTextureSizeInLuxels[1] / 2;
+		int wh = width * height;
+
+		Vector genocides[4];
+		info.m_Points.StoreUnalignedContigVector3SIMD(genocides);
+
+		CBaseTrace traceResult;
+		float radius = 0;
+		for (; radius < 400; radius++)
+		{
+			SphereTraceLeafBrushes(9, genocides[0], dl->light.origin, radius, traceResult);
+			if (traceResult.fraction != 1.0)
+			{
+				break;
+			}
+		}
+
+
+		if (SDFchannel < 3)
+		{
+			for (int n = 0; n < info.m_NormalCount; ++n)
+			{
+				for (int i = 0; i < numSamples; i++)
+				{
+					info.m_pFaceLight->light[0][n][sampleIdx + i + wh].Init(radius, 0, 0);
+					//info.m_pFaceLight->light[SDFIndex][n][sampleIdx + i].m_flDirectSunAmount = 0.0;
+				}
+			}
+
+		}
+		else
+		{
+			info.m_pFaceLight->light[SDFIndex][0]->m_flDirectSunAmount = radius;
+		}
+		*/
+	
+		
+		
+
+		lightNum++;
 	}
 }
 

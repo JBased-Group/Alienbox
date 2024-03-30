@@ -272,7 +272,7 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_FIELD( m_vecAdditionalPVSOrigin, FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( m_vecCameraPVSOrigin, FIELD_POSITION_VECTOR ),
 
-	DEFINE_FIELD( m_hUseEntity, FIELD_EHANDLE ),
+	DEFINE_FIELD(m_hUseEntity, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_iTrain, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iRespawnFrames, FIELD_FLOAT ),
 	DEFINE_FIELD( m_afPhysicsFlags, FIELD_INTEGER ),
@@ -7882,9 +7882,18 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
 
 		SendPropDataTable(SENDINFO_DT(pl), &REFERENCE_SEND_TABLE(DT_PlayerState), SendProxy_DataTableToDataTable),
 
+		SendPropInt(SENDINFO(m_iFOV), 8, SPROP_UNSIGNED),
+		SendPropInt(SENDINFO(m_iFOVStart), 8, SPROP_UNSIGNED),
+		SendPropFloat(SENDINFO(m_flFOVTime)),
+		SendPropInt(SENDINFO(m_iDefaultFOV), 8, SPROP_UNSIGNED),
+		SendPropEHandle(SENDINFO(m_hZoomOwner)),
+
 		SendPropEHandle(SENDINFO(m_hVehicle)),
 		SendPropEHandle(SENDINFO(m_hUseEntity)),
+
+		SendPropEHandle(SENDINFO(m_hViewEntity)),
 		SendPropEHandle( SENDINFO( m_hGroundEntity ), SPROP_CHANGES_OFTEN ),
+
 
 		SendPropInt		(SENDINFO(m_iHealth), 16, SPROP_UNSIGNED ),	
 		SendPropInt		(SENDINFO(m_lifeState), 3, SPROP_UNSIGNED ),
@@ -7894,11 +7903,7 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
 		SendPropInt		(SENDINFO(m_fFlags), PLAYER_FLAG_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN, SendProxy_CropFlagsToPlayerFlagBitsLength ),
 		SendPropInt		(SENDINFO(m_iObserverMode), 3, SPROP_UNSIGNED ),
 		SendPropEHandle	(SENDINFO(m_hObserverTarget) ),
-		SendPropInt		(SENDINFO(m_iFOV), 8, SPROP_UNSIGNED ),
-		SendPropInt		(SENDINFO(m_iFOVStart), 8, SPROP_UNSIGNED ),
-		SendPropFloat	(SENDINFO(m_flFOVTime) ),
-		SendPropInt		(SENDINFO(m_iDefaultFOV), 8, SPROP_UNSIGNED ),
-		SendPropEHandle	(SENDINFO(m_hZoomOwner) ),
+		
 		SendPropArray	(SendPropEHandle( SENDINFO_ARRAY( m_hViewModel ) ), m_hViewModel ),
 		SendPropString	(SENDINFO(m_szLastPlaceName) ),
 		SendPropVector	(SENDINFO(m_vecLadderNormal), 0, SPROP_NORMAL ),
@@ -7911,7 +7916,7 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
 
 		SendPropEHandle( SENDINFO_STRUCTELEM( m_PlayerFog.m_hCtrl ) ),
 
-		SendPropEHandle	(SENDINFO( m_hViewEntity)),
+		
 
 		// Data that only gets sent to the local player.
 		SendPropDataTable( "localdata", 0, &REFERENCE_SEND_TABLE(DT_LocalPlayerExclusive), SendProxy_SendLocalDataTable ),

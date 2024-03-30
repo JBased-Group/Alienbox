@@ -270,7 +270,7 @@ struct StaticPropLump_t
 	unsigned char	m_nMaxCPULevel;
 	unsigned char	m_nMinGPULevel;
 	unsigned char	m_nMaxGPULevel;
-	//	int				m_Lighting;			// index into the GAMELUMP_STATIC_PROP_LIGHTING lump
+	//int				m_Lighting;			// index into the GAMELUMP_STATIC_PROP_LIGHTING lump
 	color32			m_DiffuseModulation;	// per instance color and alpha modulation
 	bool			m_bDisableX360;
 };

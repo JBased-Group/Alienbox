@@ -1558,35 +1558,29 @@ CompressVis
 
 ===============
 */
-int CompressVis (byte *vis, byte *dest)
+int CompressVis( byte* vis, byte* dest )
 {
-	int		j;
-	int		rep;
-	int		visrow;
-	byte	*dest_p;
-	
-	dest_p = dest;
-//	visrow = (r_numvisleafs + 7)>>3;
-	visrow = (dvis->numclusters + 7)>>3;
-	
-	for (j=0 ; j<visrow ; j++)
-	{
-		*dest_p++ = vis[j];
-		if (vis[j])
-			continue;
+    int j;
+    int rep;
+    int visrow = ( dvis->numclusters + 7 ) >> 3;
+    byte* dest_p = dest;
 
-		rep = 1;
-		for ( j++; j<visrow ; j++)
-			if (vis[j] || rep == 255)
-				break;
-			else
-				rep++;
-		*dest_p++ = rep;
-		j--;
-	}
-	
-	return dest_p - dest;
-}
+    for ( j = 0; j < visrow; j++ )
+    {
+        *dest_p++ = vis[j];
+        if (!vis[j])
+        {
+            rep = 1;
+            while ( ++j < visrow && !vis[j] && rep < 255 )
+                rep++;
+            *dest_p++ = rep;
+            j--;
+        }
+    }
+
+    return dest_p - dest;
+}//xorusr: simplified cycles
+
 
 
 /*
@@ -1594,40 +1588,37 @@ int CompressVis (byte *vis, byte *dest)
 DecompressVis
 ===================
 */
-void DecompressVis (byte *in, byte *decompressed)
+void DecompressVis(byte* in, byte* decompressed)
 {
-	int		c;
-	byte	*out;
-	int		row;
+	int c;
+	byte* out = decompressed;
+	int row = (dvis->numclusters + 7) >> 3;
 
-//	row = (r_numvisleafs+7)>>3;	
-	row = (dvis->numclusters+7)>>3;	
-	out = decompressed;
-
-	do
+	while (out - decompressed < row)
 	{
 		if (*in)
 		{
 			*out++ = *in++;
-			continue;
 		}
-	
-		c = in[1];
-		if (!c)
-			Error ("DecompressVis: 0 repeat");
-		in += 2;
-		if ((out - decompressed) + c > row)
+		else
 		{
-			c = row - (out - decompressed);
-			Warning( "warning: Vis decompression overrun\n" );
+			c = in[1];
+			if (!c)
+				Error("DecompressVis: 0 repeat");
+
+			in += 2;
+			if ((out - decompressed) + c > row)
+			{
+				c = row - (out - decompressed);
+				Warning("warning: Vis decompression overrun\n");
+			}
+
+			memset(out, 0, c);
+			out += c;
 		}
-		while (c)
-		{
-			*out++ = 0;
-			c--;
-		}
-	} while (out - decompressed < row);
-}
+	}
+}// xorusr: simplified cycles
+
 
 //-----------------------------------------------------------------------------
 //	Lump-specific swap functions
@@ -2899,8 +2890,8 @@ void WriteBSPFile( const char *filename, char *pUnused )
 	AddLump( LUMP_CUBEMAPS, g_CubemapSamples, g_nCubemapSamples );
 	AddLump( LUMP_CLIPPORTALVERTS, ( float * )g_ClipPortalVerts, g_nClipPortalVerts * 3 );
 
-	AddLump( LUMP_WORLDLIGHTS, dworldlightsLDR, numworldlightsLDR );
-	AddLump( LUMP_WORLDLIGHTS_HDR, dworldlightsHDR, numworldlightsHDR );
+	AddLump( LUMP_WORLDLIGHTS, dworldlightsLDR, numworldlightsLDR, 1 );
+	AddLump( LUMP_WORLDLIGHTS_HDR, dworldlightsHDR, numworldlightsHDR, 1 );
 
     AddLump( LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS, g_DispLightmapSamplePositions );
 	AddLump( LUMP_FACE_MACRO_TEXTURE_INFO, g_FaceMacroTextureInfos );
@@ -3547,7 +3538,7 @@ void CalcFaceExtents(dface_t *s, int lightmapTextureMinsInLuxels[2], int lightma
 		maxs[i] = ( float )ceil( maxs[i] );
 
 		lightmapTextureMinsInLuxels[i] = ( int )mins[i];
-		lightmapTextureSizeInLuxels[i] = ( int )( maxs[i] - mins[i] );
+		lightmapTextureSizeInLuxels[i] = ( int )( maxs[i] - mins[i] ) * 2 + 4;
 		if( lightmapTextureSizeInLuxels[i] > nMaxLightmapDim + 1 )
 		{
 			Vector point = vec3_origin;

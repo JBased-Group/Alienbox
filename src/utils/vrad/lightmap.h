@@ -79,6 +79,7 @@ struct facelight_t
 	Vector		*luxel;				// world space position of luxel
 	Vector		*luxelNormals;		// world space normal of luxel
 	float		worldAreaPerLuxel;
+	int         width;
 };
 
 extern directlight_t	*activelights;

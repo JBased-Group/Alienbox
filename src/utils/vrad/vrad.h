@@ -441,6 +441,7 @@ qboolean IsFog( dface_t * f );
 bool AddDispCollTreesToWorld( void );
 int PointLeafnum( Vector const &point );
 float TraceLeafBrushes( int leafIndex, const Vector &start, const Vector &end, CBaseTrace &traceOut );
+float SphereTraceLeafBrushes(int leafIndex, const Vector& start, const Vector& end, float radius, CBaseTrace& traceOut);
 
 //=============================================================================
 

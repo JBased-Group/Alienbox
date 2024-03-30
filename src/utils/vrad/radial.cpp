@@ -837,9 +837,42 @@ void FinalLightFace( int iThread, int facenum )
 				pdata[bumpSample][2] = randomColor[2] / ( bumpSample + 1 );
 				pdata[bumpSample][3] = 0;
 #else
+				int curY = ((int)((float)(j) / (float)(fl->width))) % (fl->numluxels / fl->width);
 				// convert to a 4 byte r,g,b,signed exponent format
-				VectorToColorRGBExp32( Vector( lb[bumpSample].m_vecLighting.x, lb[bumpSample].m_vecLighting.y,
-											   lb[bumpSample].m_vecLighting.z ), *( ColorRGBExp32 *)pdata[bumpSample] );
+				if (j%(fl->width) > fl->width / 2 || curY > fl->numluxels/fl->width/2)
+				{
+					Vector acclight(0,0,0);
+					int numlight = 0;
+					for (directlight_t* dl = activelights; dl != NULL; dl = dl->next)
+					{
+						int w = ((j-1) % (fl->width)) % (fl->width / 2);
+						int h = ((int)((float)(j) / (float)(fl->width) - 1)) % (fl->numluxels / fl->width / 2);
+						int li = w + h*fl->width;
+						Vector luxelpos = fl->luxel[li] + fl->luxelNormals[li];
+						CBaseTrace traceResult;
+						float radius = 0;
+						for (; radius < 200; radius++)
+						{
+							SphereTraceLeafBrushes(9, luxelpos, dl->light.origin, radius, traceResult);
+							if (traceResult.fraction != 1.0)
+							{
+								break;
+							}
+						}
+						Vector l(0, 0, 0);
+						l[numlight % 3] = radius * 10;
+						acclight += l;
+						numlight++;
+						
+					}
+					VectorToColorRGBExp32(acclight, *(ColorRGBExp32*)pdata[bumpSample]);
+				}
+				else
+				{
+					
+					VectorToColorRGBExp32(Vector(lb[bumpSample].m_vecLighting.x, lb[bumpSample].m_vecLighting.y,
+						lb[bumpSample].m_vecLighting.z), *(ColorRGBExp32*)pdata[bumpSample]);
+				}
 #endif
 
 				pdata[bumpSample] += 4;

@@ -59,3 +59,7 @@ src/utils/*/Release/
 *.7z
 /src/Debug
 /src/launcher/Release
+/src/utils/.vs
+/src/materialsystem/stdshaders/.vs
+/src/materialsystem/shaderlib/Release
+/src/dx9sdk/lib

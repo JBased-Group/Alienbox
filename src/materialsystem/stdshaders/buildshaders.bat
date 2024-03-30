@@ -39,6 +39,7 @@ goto set_force_end
 			set IS30=1
 			goto set_force_end
 :set_force_end
+set IS30=1
 
 if /i "%2" == "-game" goto set_mod_args
 goto build_shaders

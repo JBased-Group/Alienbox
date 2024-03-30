@@ -502,6 +502,14 @@ static void AddStaticPropToLump( StaticPropBuild_t const& build )
 	propLump.m_Solid = build.m_Solid;
 	propLump.m_Skin = build.m_Skin;
 	propLump.m_Flags = build.m_Flags;
+	propLump.m_DiffuseModulation.a = 255;
+	propLump.m_DiffuseModulation.r = 255;
+	propLump.m_DiffuseModulation.g = 255;
+	propLump.m_DiffuseModulation.b = 255;
+	propLump.m_nMinCPULevel = 0;
+	propLump.m_nMaxCPULevel = 255;
+	propLump.m_nMinGPULevel = 0;
+	propLump.m_nMaxGPULevel = 255;
 	if (build.m_FadesOut)
 	{
 		propLump.m_Flags |= STATIC_PROP_FLAG_FADES;

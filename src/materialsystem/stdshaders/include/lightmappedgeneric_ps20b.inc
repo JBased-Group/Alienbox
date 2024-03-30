@@ -66,16 +66,15 @@ class lightmappedgeneric_ps20b_Static_Index
 	unsigned int m_nSELFILLUM : 2;
 	unsigned int m_nNORMALMAPALPHAENVMAPMASK : 2;
 	unsigned int m_nDIFFUSEBUMPMAP : 2;
-	unsigned int m_nBASETEXTURENOENVMAP : 2;
-	unsigned int m_nBASETEXTURE2NOENVMAP : 2;
+	unsigned int m_nBASETEXTURENOENVMAP : 1;
+	unsigned int m_nBASETEXTURE2NOENVMAP : 1;
 	unsigned int m_nWARPLIGHTING : 2;
 	unsigned int m_nFANCY_BLENDING : 2;
-	unsigned int m_nPARALLAX_MAPPING : 1;
 	unsigned int m_nSEAMLESS : 2;
 	unsigned int m_nOUTLINE : 1;
-	unsigned int m_nSOFTEDGES : 2;
+	unsigned int m_nSOFTEDGES : 1;
 	unsigned int m_nBUMPMASK : 2;
-	unsigned int m_nDETAIL_BLEND_MODE : 4;
+	unsigned int m_nDETAIL_BLEND_MODE : 2;
 	unsigned int m_nPARALLAXCORRECT : 2;
 	unsigned int m_nSHADER_SRGB_READ : 1;
 	unsigned int m_nLIGHTING_PREVIEW : 3;
@@ -95,7 +94,6 @@ class lightmappedgeneric_ps20b_Static_Index
 	bool m_bBASETEXTURE2NOENVMAP : 1;
 	bool m_bWARPLIGHTING : 1;
 	bool m_bFANCY_BLENDING : 1;
-	bool m_bPARALLAX_MAPPING : 1;
 	bool m_bSEAMLESS : 1;
 	bool m_bOUTLINE : 1;
 	bool m_bSOFTEDGES : 1;
@@ -198,7 +196,7 @@ public:
 
 	void SetBASETEXTURENOENVMAP( int i )
 	{
-		Assert( i >= 0 && i <= 1 );
+		Assert( i >= 0 && i <= 0 );
 		m_nBASETEXTURENOENVMAP = i;
 #ifdef _DEBUG
 		m_bBASETEXTURENOENVMAP = true;
@@ -207,7 +205,7 @@ public:
 
 	void SetBASETEXTURE2NOENVMAP( int i )
 	{
-		Assert( i >= 0 && i <= 1 );
+		Assert( i >= 0 && i <= 0 );
 		m_nBASETEXTURE2NOENVMAP = i;
 #ifdef _DEBUG
 		m_bBASETEXTURE2NOENVMAP = true;
@@ -232,15 +230,6 @@ public:
 #endif	// _DEBUG
 	}
 
-	void SetPARALLAX_MAPPING( int i )
-	{
-		Assert( i >= 0 && i <= 0 );
-		m_nPARALLAX_MAPPING = i;
-#ifdef _DEBUG
-		m_bPARALLAX_MAPPING = true;
-#endif	// _DEBUG
-	}
-
 	void SetSEAMLESS( int i )
 	{
 		Assert( i >= 0 && i <= 1 );
@@ -261,7 +250,7 @@ public:
 
 	void SetSOFTEDGES( int i )
 	{
-		Assert( i >= 0 && i <= 1 );
+		Assert( i >= 0 && i <= 0 );
 		m_nSOFTEDGES = i;
 #ifdef _DEBUG
 		m_bSOFTEDGES = true;
@@ -279,7 +268,7 @@ public:
 
 	void SetDETAIL_BLEND_MODE( int i )
 	{
-		Assert( i >= 0 && i <= 12 );
+		Assert( i >= 0 && i <= 1 );
 		m_nDETAIL_BLEND_MODE = i;
 #ifdef _DEBUG
 		m_bDETAIL_BLEND_MODE = true;
@@ -335,7 +324,6 @@ public:
 		m_nBASETEXTURE2NOENVMAP = 0;
 		m_nWARPLIGHTING = 0;
 		m_nFANCY_BLENDING = 0;
-		m_nPARALLAX_MAPPING = 0;
 		m_nSEAMLESS = 0;
 		m_nOUTLINE = 0;
 		m_nSOFTEDGES = 0;
@@ -360,7 +348,6 @@ public:
 		m_bBASETEXTURE2NOENVMAP = false;
 		m_bWARPLIGHTING = false;
 		m_bFANCY_BLENDING = false;
-		m_bPARALLAX_MAPPING = false;
 		m_bSEAMLESS = false;
 		m_bOUTLINE = false;
 		m_bSOFTEDGES = false;
@@ -374,8 +361,7 @@ public:
 
 	int GetIndex() const
 	{
-		Assert( m_bMASKEDBLENDING && m_bBASETEXTURE2 && m_bBUMPMAP && m_bBUMPMAP2 && m_bCUBEMAP && m_bENVMAPMASK && m_bBASEALPHAENVMAPMASK && m_bSELFILLUM && m_bNORMALMAPALPHAENVMAPMASK && m_bDIFFUSEBUMPMAP && m_bBASETEXTURENOENVMAP && m_bBASETEXTURE2NOENVMAP && m_bWARPLIGHTING && m_bFANCY_BLENDING && m_bPARALLAX_MAPPING && m_bSEAMLESS && m_bOUTLINE && m_bSOFTEDGES && m_bBUMPMASK && m_bDETAIL_BLEND_MODE && m_bPARALLAXCORRECT && m_bSHADER_SRGB_READ && m_bLIGHTING_PREVIEW );
-		AssertMsg( !( m_nSEAMLESS && m_nPARALLAX_MAPPING ), "Invalid combo combination ( SEAMLESS && PARALLAX_MAPPING )" );
+		Assert( m_bMASKEDBLENDING && m_bBASETEXTURE2 && m_bBUMPMAP && m_bBUMPMAP2 && m_bCUBEMAP && m_bENVMAPMASK && m_bBASEALPHAENVMAPMASK && m_bSELFILLUM && m_bNORMALMAPALPHAENVMAPMASK && m_bDIFFUSEBUMPMAP && m_bBASETEXTURENOENVMAP && m_bBASETEXTURE2NOENVMAP && m_bWARPLIGHTING && m_bFANCY_BLENDING && m_bSEAMLESS && m_bOUTLINE && m_bSOFTEDGES && m_bBUMPMASK && m_bDETAIL_BLEND_MODE && m_bPARALLAXCORRECT && m_bSHADER_SRGB_READ && m_bLIGHTING_PREVIEW );
 		AssertMsg( !( m_nSEAMLESS && ( m_nOUTLINE || m_nSOFTEDGES ) ), "Invalid combo combination ( SEAMLESS && ( OUTLINE || SOFTEDGES ) )" );
 		AssertMsg( !( m_nBASETEXTURE2 && ( m_nOUTLINE || m_nSOFTEDGES ) ), "Invalid combo combination ( BASETEXTURE2 && ( OUTLINE || SOFTEDGES ) )" );
 		AssertMsg( !( m_nBUMPMAP2 && ( m_nOUTLINE || m_nSOFTEDGES ) ), "Invalid combo combination ( BUMPMAP2 && ( OUTLINE || SOFTEDGES ) )" );
@@ -408,11 +394,11 @@ public:
 		AssertMsg( !( m_nBASEALPHAENVMAPMASK && m_nBUMPMAP ), "Invalid combo combination ( BASEALPHAENVMAPMASK && BUMPMAP )" );
 		AssertMsg( !( m_nSEAMLESS && ( m_nDETAIL_BLEND_MODE != 12 ) ), "Invalid combo combination ( SEAMLESS && ( DETAIL_BLEND_MODE != 12 ) )" );
 		AssertMsg( !( m_nSEAMLESS && m_nMASKEDBLENDING ), "Invalid combo combination ( SEAMLESS && MASKEDBLENDING )" );
-		return ( 32 * m_nMASKEDBLENDING ) + ( 64 * m_nBASETEXTURE2 ) + ( 128 * m_nBUMPMAP ) + ( 384 * m_nBUMPMAP2 ) + ( 768 * m_nCUBEMAP ) + ( 2304 * m_nENVMAPMASK ) + ( 4608 * m_nBASEALPHAENVMAPMASK ) + ( 9216 * m_nSELFILLUM ) + ( 18432 * m_nNORMALMAPALPHAENVMAPMASK ) + ( 36864 * m_nDIFFUSEBUMPMAP ) + ( 73728 * m_nBASETEXTURENOENVMAP ) + ( 147456 * m_nBASETEXTURE2NOENVMAP ) + ( 294912 * m_nWARPLIGHTING ) + ( 589824 * m_nFANCY_BLENDING ) + ( 1179648 * m_nPARALLAX_MAPPING ) + ( 1179648 * m_nSEAMLESS ) + ( 2359296 * m_nOUTLINE ) + ( 2359296 * m_nSOFTEDGES ) + ( 4718592 * m_nBUMPMASK ) + ( 9437184 * m_nDETAIL_BLEND_MODE ) + ( 122683392 * m_nPARALLAXCORRECT ) + ( 245366784 * m_nSHADER_SRGB_READ ) + ( 245366784 * m_nLIGHTING_PREVIEW ) + ( 981467136 * m_nDOPIXELFOG ) + 0;
+		return ( 32 * m_nMASKEDBLENDING ) + ( 64 * m_nBASETEXTURE2 ) + ( 128 * m_nBUMPMAP ) + ( 384 * m_nBUMPMAP2 ) + ( 768 * m_nCUBEMAP ) + ( 2304 * m_nENVMAPMASK ) + ( 4608 * m_nBASEALPHAENVMAPMASK ) + ( 9216 * m_nSELFILLUM ) + ( 18432 * m_nNORMALMAPALPHAENVMAPMASK ) + ( 36864 * m_nDIFFUSEBUMPMAP ) + ( 73728 * m_nBASETEXTURENOENVMAP ) + ( 73728 * m_nBASETEXTURE2NOENVMAP ) + ( 73728 * m_nWARPLIGHTING ) + ( 147456 * m_nFANCY_BLENDING ) + ( 294912 * m_nSEAMLESS ) + ( 589824 * m_nOUTLINE ) + ( 589824 * m_nSOFTEDGES ) + ( 589824 * m_nBUMPMASK ) + ( 1179648 * m_nDETAIL_BLEND_MODE ) + ( 2359296 * m_nPARALLAXCORRECT ) + ( 4718592 * m_nSHADER_SRGB_READ ) + ( 4718592 * m_nLIGHTING_PREVIEW ) + ( 18874368 * m_nDOPIXELFOG ) + 0;
 	}
 };
 
-#define shaderStaticTest_lightmappedgeneric_ps20b psh_forgot_to_set_static_MASKEDBLENDING + psh_forgot_to_set_static_BASETEXTURE2 + psh_forgot_to_set_static_BUMPMAP + psh_forgot_to_set_static_BUMPMAP2 + psh_forgot_to_set_static_CUBEMAP + psh_forgot_to_set_static_ENVMAPMASK + psh_forgot_to_set_static_BASEALPHAENVMAPMASK + psh_forgot_to_set_static_SELFILLUM + psh_forgot_to_set_static_NORMALMAPALPHAENVMAPMASK + psh_forgot_to_set_static_DIFFUSEBUMPMAP + psh_forgot_to_set_static_BASETEXTURENOENVMAP + psh_forgot_to_set_static_BASETEXTURE2NOENVMAP + psh_forgot_to_set_static_WARPLIGHTING + psh_forgot_to_set_static_FANCY_BLENDING + psh_forgot_to_set_static_PARALLAX_MAPPING + psh_forgot_to_set_static_SEAMLESS + psh_forgot_to_set_static_OUTLINE + psh_forgot_to_set_static_SOFTEDGES + psh_forgot_to_set_static_BUMPMASK + psh_forgot_to_set_static_DETAIL_BLEND_MODE + psh_forgot_to_set_static_PARALLAXCORRECT + psh_forgot_to_set_static_SHADER_SRGB_READ + psh_forgot_to_set_static_LIGHTING_PREVIEW
+#define shaderStaticTest_lightmappedgeneric_ps20b psh_forgot_to_set_static_MASKEDBLENDING + psh_forgot_to_set_static_BASETEXTURE2 + psh_forgot_to_set_static_BUMPMAP + psh_forgot_to_set_static_BUMPMAP2 + psh_forgot_to_set_static_CUBEMAP + psh_forgot_to_set_static_ENVMAPMASK + psh_forgot_to_set_static_BASEALPHAENVMAPMASK + psh_forgot_to_set_static_SELFILLUM + psh_forgot_to_set_static_NORMALMAPALPHAENVMAPMASK + psh_forgot_to_set_static_DIFFUSEBUMPMAP + psh_forgot_to_set_static_BASETEXTURENOENVMAP + psh_forgot_to_set_static_BASETEXTURE2NOENVMAP + psh_forgot_to_set_static_WARPLIGHTING + psh_forgot_to_set_static_FANCY_BLENDING + psh_forgot_to_set_static_SEAMLESS + psh_forgot_to_set_static_OUTLINE + psh_forgot_to_set_static_SOFTEDGES + psh_forgot_to_set_static_BUMPMASK + psh_forgot_to_set_static_DETAIL_BLEND_MODE + psh_forgot_to_set_static_PARALLAXCORRECT + psh_forgot_to_set_static_SHADER_SRGB_READ + psh_forgot_to_set_static_LIGHTING_PREVIEW
 
 
 class lightmappedgeneric_ps20b_Dynamic_Index

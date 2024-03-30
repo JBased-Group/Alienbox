@@ -59,7 +59,7 @@ int		num_edge_verts;
 int		edge_verts[MAX_MAP_VERTS];
 
 
-float	g_maxLightmapDimension = 32;
+float	g_maxLightmapDimension = 14;
 
 
 face_t *NewFaceFromFace (face_t *f);
@@ -1193,11 +1193,11 @@ void SubdivideFace (face_t **pFaceList, face_t *f)
 			mins = 999999;
 			maxs = -999999;
 			
-			VECTOR_COPY (tex->lightmapVecsLuxelsPerWorldUnits[axis], temp);
+			VECTOR_COPY(tex->lightmapVecsLuxelsPerWorldUnits[axis], temp);
 			w = f->w;
 			for (i=0 ; i<w->numpoints ; i++)
 			{
-				v = DotProduct (w->p[i], temp);
+				v = DotProduct(w->p[i], temp);
 				if (v < mins)
 					mins = v;
 				if (v > maxs)
@@ -1213,26 +1213,26 @@ void SubdivideFace (face_t **pFaceList, face_t *f)
 		// split it
 			c_subdivide++;
 			
-			luxelsPerWorldUnit = VectorNormalize (temp);	
+			luxelsPerWorldUnit = VectorNormalize(temp);	
 
 			dist = ( mins + g_maxLightmapDimension - 1 ) / luxelsPerWorldUnit;
 
-			ClipWindingEpsilon (w, temp, dist, ON_EPSILON, &frontw, &backw);
+			ClipWindingEpsilon(w, temp, dist, ON_EPSILON, &frontw, &backw);
 			if (!frontw || !backw)
-				Error ("SubdivideFace: didn't split the polygon");
+				Error("SubdivideFace: didn't split the polygon");
 
-			f->split[0] = NewFaceFromFace (f);
+			f->split[0] = NewFaceFromFace(f);
 			f->split[0]->w = frontw;
 			f->split[0]->next = *pFaceList;
 			*pFaceList = f->split[0];
 
-			f->split[1] = NewFaceFromFace (f);
+			f->split[1] = NewFaceFromFace(f);
 			f->split[1]->w = backw;
 			f->split[1]->next = *pFaceList;
 			*pFaceList = f->split[1];
 
-			SubdivideFace (pFaceList, f->split[0]);
-			SubdivideFace (pFaceList, f->split[1]);
+			SubdivideFace(pFaceList, f->split[0]);
+			SubdivideFace(pFaceList, f->split[1]);
 			return;
 		}
 	}
