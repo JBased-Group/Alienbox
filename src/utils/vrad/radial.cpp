@@ -388,7 +388,7 @@ radial_t *BuildPatchRadial( int facenum )
 }
 
 
-radial_t *BuildLuxelRadial( int facenum, int style )
+radial_t *BuildLuxelRadial( int facenum, int style, int directlightid )
 {
 	LightingValue_t light[NUM_BUMP_VECTS + 1];
 
@@ -403,14 +403,14 @@ radial_t *BuildLuxelRadial( int facenum, int style )
 	{
 		if( needsBumpmap )
 		{
-			for( int bumpSample = 0; bumpSample < NUM_BUMP_VECTS + 1; bumpSample++ )
+			for (int bumpSample = 0; bumpSample < NUM_BUMP_VECTS + 1; bumpSample++)
 			{
-				light[bumpSample] = fl->light[style][bumpSample][k];
+				light[bumpSample] = fl->light[directlightid][style][bumpSample][k];
 			}
 		}
 		else
 		{
-			light[0] = fl->light[style][0][k];
+			light[0] = fl->light[directlightid][style][0][k];
 		}
 
 		AddDirectToRadial( rad, fl->sample[k].pos, fl->sample[k].mins, fl->sample[k].maxs, light, needsBumpmap, needsBumpmap );
@@ -451,12 +451,12 @@ radial_t *BuildLuxelRadial( int facenum, int style )
 			{
 				for( int bumpSample = 0; bumpSample < NUM_BUMP_VECTS + 1; bumpSample++ )
 				{
-					light[bumpSample] = fl->light[nstyle][bumpSample][k];
+					light[bumpSample] = fl->light[directlightid][nstyle][bumpSample][k];
 				}
 			}
 			else
 			{
-				light[0]=fl->light[nstyle][0][k];
+				light[0]=fl->light[directlightid][nstyle][0][k];
 			}
 
 			Vector tmp;
@@ -649,7 +649,7 @@ void FinalLightFace( int iThread, int facenum )
 	LightingValue_t lb[NUM_BUMP_VECTS + 1], v[NUM_BUMP_VECTS + 1];
 	unsigned char   *pdata[NUM_BUMP_VECTS + 1];
 	int				bumpSample;
-	radial_t	    *rad = NULL;
+	radial_t	    *rad[MAXDIRECTLIGHTS] = {NULL};
 	radial_t	    *prad = NULL;
 
    	f = &g_pFaces[facenum];
@@ -707,11 +707,13 @@ void FinalLightFace( int iThread, int facenum )
 		{
 			if( !bDisp )
 			{
-				rad = BuildLuxelRadial( facenum, k );
+				rad[0] = BuildLuxelRadial(facenum, k, 0);
+				rad[1] = BuildLuxelRadial(facenum, k, 1);
 			}
 			else
 			{
-				rad = StaticDispMgr()->BuildLuxelRadial( facenum, k, needsBumpmap );
+				rad[0] = StaticDispMgr()->BuildLuxelRadial(facenum, k, needsBumpmap);
+				rad[1] = StaticDispMgr()->BuildLuxelRadial(facenum, k, needsBumpmap);
 			}
 		}
 
@@ -747,43 +749,52 @@ void FinalLightFace( int iThread, int facenum )
 		{
 			// garymct - direct lighting
 			bool baseSampleOk = true;
-
+			int curY = (j / fl->width) % (fl->numluxels / fl->width);
+			int directlightid = (j % (fl->width)) > ((float)fl->width / 2.0f);
+			int w = ((j) % (fl->width)) % (fl->width / 2 + 1);
+			int h = curY % (fl->numluxels / fl->width / 2 + 1);
+			int li = w + h * fl->width;
 			if (!do_fast)
 			{
 				if( !bDisp )
 				{
-					baseSampleOk = SampleRadial( rad, fl->luxel[j], lb, bumpSampleCount );
+					baseSampleOk = SampleRadial( rad[directlightid], fl->luxel[li], lb, bumpSampleCount);
 				}
 				else
 				{
-					baseSampleOk = StaticDispMgr()->SampleRadial( facenum, rad, fl->luxel[j], j, lb, bumpSampleCount, false );
+					baseSampleOk = StaticDispMgr()->SampleRadial( facenum, rad[directlightid], fl->luxel[li], j, lb, bumpSampleCount, false );
 				}
 			}
 			else
 			{
 				for ( int iBump = 0 ; iBump < bumpSampleCount; iBump++ )
 				{
-					lb[iBump] = fl->light[0][iBump][j];
+					lb[iBump] = fl->light[directlightid][0][iBump][li];
 				}
 			}
-
+			
 			if (prad)
 			{
 				// garymct - bounced light
 				// v is indirect light that is received on the luxel.
 				if( !bDisp )
 				{
-					SampleRadial( prad, fl->luxel[j], v, bumpSampleCount );
+					SampleRadial( prad, fl->luxel[li], v, bumpSampleCount );
 				}
 				else
 				{
-					StaticDispMgr()->SampleRadial( facenum, prad, fl->luxel[j], j, v, bumpSampleCount, true );
+					StaticDispMgr()->SampleRadial( facenum, prad, fl->luxel[li], j, v, bumpSampleCount, true );
 				}
 
-				for( bumpSample = 0; bumpSample < bumpSampleCount; ++bumpSample )
+				if (curY < (float)fl->numluxels / (float)fl->width / 2.0f)
 				{
-					lb[bumpSample].AddLight( v[bumpSample] );
+					for (bumpSample = 0; bumpSample < bumpSampleCount; ++bumpSample)
+					{
+						lb[bumpSample].m_vecLighting = v[bumpSample].m_vecLighting;
+						lb[bumpSample].m_flDirectSunAmount = v[bumpSample].m_flDirectSunAmount;
+					}
 				}
+				
 			}
 
 			if ( bDisp && g_bDumpPatches )
@@ -823,7 +834,7 @@ void FinalLightFace( int iThread, int facenum )
 				{
 					++avgCount;
 
-					ApplyMacroTextures( facenum, fl->luxel[j], lb[0].m_vecLighting );
+					ApplyMacroTextures( facenum, fl->luxel[li], lb[0].m_vecLighting );
 
 					// For median computation
 					m_Red.Insert( lb[bumpSample].m_vecLighting[0] );
@@ -837,20 +848,20 @@ void FinalLightFace( int iThread, int facenum )
 				pdata[bumpSample][2] = randomColor[2] / ( bumpSample + 1 );
 				pdata[bumpSample][3] = 0;
 #else
-				int curY = ((int)((float)(j) / (float)(fl->width))) % (fl->numluxels / fl->width);
+				
 				// convert to a 4 byte r,g,b,signed exponent format
-				if (j%(fl->width) > fl->width / 2 || curY > fl->numluxels/fl->width/2)
+				if (j%(fl->width) > fl->width / 2 && curY < fl->numluxels / fl->width / 2)
 				{
-					Vector acclight(0,0,0);
+					h = ((int)((float)(j - 1) / (float)(fl->width))) % (fl->numluxels / fl->width / 2);
+					w = ((j - 1) % (fl->width)) % (fl->width / 2);
+					li = w + h * fl->width;
+					Vector acclight(0,0,100000);
 					int numlight = 0;
 					for (directlight_t* dl = activelights; dl != NULL; dl = dl->next)
 					{
-						int w = ((j-1) % (fl->width)) % (fl->width / 2);
-						int h = ((int)((float)(j) / (float)(fl->width) - 1)) % (fl->numluxels / fl->width / 2);
-						int li = w + h*fl->width;
-						Vector luxelpos = fl->luxel[li] + fl->luxelNormals[li];
+						Vector luxelpos = fl->luxel[li];
 						CBaseTrace traceResult;
-						float radius = 0;
+						float radius = -25;
 						for (; radius < 200; radius++)
 						{
 							SphereTraceLeafBrushes(9, luxelpos, dl->light.origin, radius, traceResult);
@@ -860,8 +871,10 @@ void FinalLightFace( int iThread, int facenum )
 							}
 						}
 						Vector l(0, 0, 0);
-						l[numlight % 3] = radius * 10;
+						l[numlight % 2] = (radius + 25) * 10;
 						acclight += l;
+						float dist = traceResult.endpos.DistTo(luxelpos);
+						acclight.z = min(acclight.z, dist/5);
 						numlight++;
 						
 					}
@@ -878,7 +891,8 @@ void FinalLightFace( int iThread, int facenum )
 				pdata[bumpSample] += 4;
 			}
 		}
-		FreeRadial( rad );
+		FreeRadial( rad[0] );
+		FreeRadial( rad[1] );
 		if (prad)
 		{
 			FreeRadial( prad );

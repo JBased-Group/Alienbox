@@ -3537,7 +3537,7 @@ void CalcFaceExtents(dface_t *s, int lightmapTextureMinsInLuxels[2], int lightma
 		mins[i] = ( float )floor( mins[i] );
 		maxs[i] = ( float )ceil( maxs[i] );
 
-		lightmapTextureMinsInLuxels[i] = ( int )mins[i];
+		lightmapTextureMinsInLuxels[i] = ( int )mins[i] - 1;
 		lightmapTextureSizeInLuxels[i] = ( int )( maxs[i] - mins[i] ) * 2 + 4;
 		if( lightmapTextureSizeInLuxels[i] > nMaxLightmapDim + 1 )
 		{

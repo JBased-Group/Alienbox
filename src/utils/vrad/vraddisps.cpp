@@ -837,17 +837,20 @@ inline void GetSampleLight( facelight_t *pFaceLight, int ndxStyle, bool bBumped,
 //	return;
 
 	// get sample from bumped lighting data
-	if( bBumped )
+	for (int dl = 0; dl < MAXDIRECTLIGHTS; dl++)
 	{
-		for( int ndxBump = 0; ndxBump < ( NUM_BUMP_VECTS+1 ); ndxBump++ )
+		if (bBumped)
 		{
-			pSampleLight[ndxBump] = pFaceLight->light[ndxStyle][ndxBump][ndxSample];
+			for (int ndxBump = 0; ndxBump < (NUM_BUMP_VECTS + 1); ndxBump++)
+			{
+				pSampleLight[ndxBump] = pFaceLight->light[dl][ndxStyle][ndxBump][ndxSample];
+			}
 		}
-	}
-	// just a generally lit surface
-	else
-	{
-		pSampleLight[0] = pFaceLight->light[ndxStyle][0][ndxSample];
+		// just a generally lit surface
+		else
+		{
+			pSampleLight[0] = pFaceLight->light[dl][ndxStyle][0][ndxSample];
+		}
 	}
 }
 

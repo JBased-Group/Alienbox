@@ -18,6 +18,8 @@
 #include "mathlib/bumpvects.h"
 #include "bsplib.h"
 
+#define MAXDIRECTLIGHTS 2
+
 typedef struct
 {
 	dface_t		*faces[2];
@@ -72,7 +74,7 @@ struct facelight_t
 	// irregularly shaped light sample data, clipped by face and luxel grid
 	int			numsamples;
 	sample_t	*sample;			
-	LightingValue_t *light[MAXLIGHTMAPS][NUM_BUMP_VECTS+1];	// result of direct illumination, indexed by sample
+	LightingValue_t *light[MAXDIRECTLIGHTS][MAXLIGHTMAPS][NUM_BUMP_VECTS+1];	// result of direct illumination, indexed by sample
 
 	// regularly spaced lightmap grid
 	int			numluxels;			

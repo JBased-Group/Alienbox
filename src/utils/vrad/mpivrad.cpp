@@ -139,11 +139,14 @@ void SerializeFace( MessageBuffer * pmb, int facenum )
 	//
 	// Write the light information
 	// 
-	for (i=0; i<MAXLIGHTMAPS; ++i) {
-		for (n=0; n<NUM_BUMP_VECTS+1; ++n) {
-			if (fl->light[i][n])
-			{
-				WriteValues( pmb, fl->light[i][n], fl->numsamples);
+	for (int dl = 0; dl < MAXDIRECTLIGHTS; dl++)
+	{
+		for (i = 0; i < MAXLIGHTMAPS; ++i) {
+			for (n = 0; n < NUM_BUMP_VECTS + 1; ++n) {
+				if (fl->light[dl][i][n])
+				{
+					WriteValues(pmb, fl->light[dl][i][n], fl->numsamples);
+				}
 			}
 		}
 	}
@@ -178,13 +181,16 @@ void UnSerializeFace( MessageBuffer * pmb, int facenum, int iSource )
 	//
 	// Read the light information
 	// 
-	for (i=0; i<MAXLIGHTMAPS; ++i) {
-		for (n=0; n<NUM_BUMP_VECTS+1; ++n) {
-			if (fl->light[i][n])
-			{
-				fl->light[i][n] = (LightingValue_t *) calloc( fl->numsamples, sizeof(LightingValue_t ) );
-				if ( ReadValues( pmb, fl->light[i][n], fl->numsamples) < 0)
-					Error("UnSerializeFace - invalid fl->light from %s (mb len: %d, offset: %d)", VMPI_GetMachineName( iSource ), pmb->getLen(), pmb->getOffset() );
+	for (int dl = 0; dl < MAXDIRECTLIGHTS; dl++)
+	{
+		for (i = 0; i < MAXLIGHTMAPS; ++i) {
+			for (n = 0; n < NUM_BUMP_VECTS + 1; ++n) {
+				if (fl->light[dl][i][n])
+				{
+					fl->light[dl][i][n] = (LightingValue_t*)calloc(fl->numsamples, sizeof(LightingValue_t));
+					if (ReadValues(pmb, fl->light[dl][i][n], fl->numsamples) < 0)
+						Error("UnSerializeFace - invalid fl->light from %s (mb len: %d, offset: %d)", VMPI_GetMachineName(iSource), pmb->getLen(), pmb->getOffset());
+				}
 			}
 		}
 	}

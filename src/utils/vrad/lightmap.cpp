@@ -2017,6 +2017,7 @@ void GatherSampleStandardLightSSE( SSE_sampleLightOutput_t &out, directlight_t *
 	// Raytrace for visibility function
 	fltx4 fractionVisible = Four_Ones;
 	TestLine( pos, src, &fractionVisible, static_prop_index_to_ignore);
+	CeilSIMD(fractionVisible);
 	dot = MulSIMD( fractionVisible, dot );
 	out.m_flDot[0] = dot;
 
@@ -2401,7 +2402,7 @@ void DumpSamples( int ndxFace, facelight_t *pFaceLight )
 						for( int iSample = 0; iSample < pFaceLight->numsamples; ++iSample )
 						{
 							sample_t *pSample = &pFaceLight->sample[iSample];
-							WriteWinding( pFileSamples[iStyle][iBump], pSample->w, pFaceLight->light[iStyle][iBump][iSample].m_vecLighting );
+							WriteWinding( pFileSamples[iStyle][iBump], pSample->w, pFaceLight->light[0][iStyle][iBump][iSample].m_vecLighting + pFaceLight->light[1][iStyle][iBump][iSample].m_vecLighting);
 							if( bDumpNormals )
 							{
 								WriteNormal( pFileSamples[iStyle][iBump], pSample->pos, pSample->normal, 15.0f, pSample->normal * 255.0f );
@@ -2422,9 +2423,12 @@ void DumpSamples( int ndxFace, facelight_t *pFaceLight )
 //-----------------------------------------------------------------------------
 static inline void AllocateLightstyleSamples( facelight_t* fl, int styleIndex, int numnormals )
 {
-	for (int n = 0; n < numnormals; ++n)
+	for (int dl = 0; dl < MAXDIRECTLIGHTS; dl++)
 	{
-		fl->light[styleIndex][n] = ( LightingValue_t* )calloc( fl->numsamples, sizeof(LightingValue_t ) );
+		for (int n = 0; n < numnormals; ++n)
+		{
+			fl->light[dl][styleIndex][n] = (LightingValue_t*)calloc(fl->numsamples, sizeof(LightingValue_t));
+		}
 	}
 }
 
@@ -2567,7 +2571,7 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 
 		// Figure out the lightstyle for this particular sample
 		int lightStyleIndex = FindOrAllocateLightstyleSamples( info.m_pFace, info.m_pFaceLight, 
-			/*dl->light.style*/ 0, info.m_NormalCount);
+			dl->light.style, info.m_NormalCount);
 		if (lightStyleIndex < 0)
 		{
 			if (info.m_WarnFace != info.m_FaceNum)
@@ -2581,7 +2585,7 @@ static void GatherSampleLightAt4Points( SSE_SampleInfo_t& info, int sampleIdx, i
 
 		// pLightmaps is an array of the lightmaps for each normal direction,
 		// here's where the result of the sample gathering goes
-		LightingValue_t** pLightmaps = info.m_pFaceLight->light[lightStyleIndex];
+		LightingValue_t** pLightmaps = info.m_pFaceLight->light[lightNum%2][lightStyleIndex];
 
 		// Incremental lighting only cares about lightstyle zero
 		if( g_pIncremental && (dl->light.style == 0) )
@@ -2973,7 +2977,7 @@ static void BuildSupersampleFaceLights( lightinfo_t& l, SSE_SampleInfo_t& info, 
 
 	// Compute the maximum intensity of all lighting associated with this lightstyle
 	// for all bumped lighting
-	LightingValue_t **ppLightSamples = info.m_pFaceLight->light[lightstyleIndex];
+	LightingValue_t **ppLightSamples = info.m_pFaceLight->light[0][lightstyleIndex];
 	ComputeSampleIntensities( info, ppLightSamples, pSampleIntensity );
 
 	Vector *pVisualizePass = NULL;
@@ -3286,7 +3290,7 @@ void BuildFacelights (int iThread, int facenum)
 
 void BuildPatchLights( int facenum )
 {
-	int i, k;
+	int k;
 
 	CPatch		*patch;
 
@@ -3301,10 +3305,13 @@ void BuildPatchLights( int facenum )
 
 	if (k >= MAXLIGHTMAPS)
 		return;
-
-	for (i = 0; i < fl->numsamples; i++)
+	
+	for (int dl = 0; dl < MAXDIRECTLIGHTS; dl++)
 	{
-		AddSampleToPatch( &fl->sample[i], fl->light[k][0][i], facenum);
+		for (int i = 0; i < fl->numsamples; i++)
+		{
+			AddSampleToPatch(&fl->sample[i], fl->light[dl][k][0][i], facenum);
+		}
 	}
 
 	// check for a valid face
@@ -3396,21 +3403,24 @@ void BuildPatchLights( int facenum )
 	// add an ambient term if desired
 	if (ambient[0] || ambient[1] || ambient[2])
 	{
-		for( int j=0; j < MAXLIGHTMAPS && f->styles[j] != 255; j++ )
+		for (int dl = 0; dl < MAXDIRECTLIGHTS; dl++)
 		{
-			if ( f->styles[j] == 0 )
+			for (int j = 0; j < MAXLIGHTMAPS && f->styles[j] != 255; j++)
 			{
-				for (i = 0; i < fl->numsamples; i++)
+				if (f->styles[j] == 0)
 				{
-					fl->light[j][0][i].m_vecLighting += ambient;
-					if( needsBumpmap )
+					for (int i = 0; i < fl->numsamples; i++)
 					{
-						fl->light[j][1][i].m_vecLighting += ambient;
-						fl->light[j][2][i].m_vecLighting += ambient;
-						fl->light[j][3][i].m_vecLighting += ambient;
+						fl->light[dl][j][0][i].m_vecLighting += ambient;
+						if (needsBumpmap)
+						{
+							fl->light[dl][j][1][i].m_vecLighting += ambient;
+							fl->light[dl][j][2][i].m_vecLighting += ambient;
+							fl->light[dl][j][3][i].m_vecLighting += ambient;
+						}
 					}
+					break;
 				}
-				break;
 			}
 		}
 	}

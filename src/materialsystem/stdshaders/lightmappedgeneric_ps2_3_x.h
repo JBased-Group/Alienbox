@@ -250,8 +250,9 @@ float4 main( PS_INPUT i ) : COLOR
 	{
 		float2 bumpCoord1 = ComputeLightmapCoordinates( i.lightmapTexCoord1And2, i.lightmapTexCoord3.xy );
 		lightmapColor1 = LightMapSample( LightmapSampler, bumpCoord1);
-		lightmapSDF = LightMapSample( LightmapSampler, bumpCoord1 + i.lightmapTexCoord3.xy/2);
-		lightmapColor1 *= clamp((lightmapSDF.x-0.03)*50,0,1) + clamp((lightmapSDF.y-0.03)*50,0,1) + clamp((lightmapSDF.z-0.03)*50,0,1);
+		lightmapSDF = LightMapSample( LightmapSampler, bumpCoord1 + float2(i.lightmapTexCoord3.x/2.0f,0.0f));
+		lightmapColor1 += LightMapSample( LightmapSampler, bumpCoord1+float2(0.0f,i.lightmapTexCoord3.y/2.0f)) * clamp((lightmapSDF.x-0.06)/lightmapSDF.z,0,1);
+		lightmapColor1 += LightMapSample( LightmapSampler, bumpCoord1+i.lightmapTexCoord3/2.0f) * clamp((lightmapSDF.y-0.06)/lightmapSDF.z,0,1);
 		//lightmapColor1 = LightMapSample( LightmapSampler, bumpCoord1 + i.lightmapTexCoord3.xy/2);
 	}
 #endif

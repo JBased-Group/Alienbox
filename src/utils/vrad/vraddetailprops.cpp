@@ -558,7 +558,7 @@ bool CastRayInLeaf( int iThread, const Vector &start, const Vector &end, int lea
 	}
 	else
 	{
-		Assert(!trace.startsolid && !trace.allsolid);
+		//Assert(!trace.startsolid && !trace.allsolid);
 	}
 	StaticDispMgr()->StartRayTest( s_DispTested[iThread] );
 	// Now try to clip against all displacements in the leaf

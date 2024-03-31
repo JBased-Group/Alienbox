@@ -424,8 +424,8 @@ void DM_ClipSphereToBrush(CToolTrace* trace, float radius, const Vector& p1, con
 
 		if (d2 > 0)
 			getout = true;	// endpoint is not in solid
-		if (d1 > -DIST_EPSILON)
-			startout = true;
+		//if (d1 > -DIST_EPSILON)
+		//	startout = true;
 
 		if (d1 <= 0 && d2 <= 0)
 			continue;
@@ -452,13 +452,13 @@ void DM_ClipSphereToBrush(CToolTrace* trace, float radius, const Vector& p1, con
 
 
 
-	if (!startout)
-	{	// original point was inside brush
-		trace->startsolid = true;
-		if (!getout)
-			trace->allsolid = true;
-		return;
-	}
+	//if (!startout)
+	//{	// original point was inside brush
+	//	trace->startsolid = true;
+	//	if (!getout)
+	//		trace->allsolid = true;
+	//	return;
+	//}
 	if (enterfrac < leavefrac)
 	{
 		if (enterfrac > NEVER_UPDATED && enterfrac < trace->fraction)

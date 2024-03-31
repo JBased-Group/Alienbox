@@ -41,6 +41,7 @@ typedef struct radial_s
 	int w, h;
 	float weight[SINGLEMAP];
 	LightingValue_t light[NUM_BUMP_VECTS + 1][SINGLEMAP];
+	LightingValue_t light2[NUM_BUMP_VECTS + 1][SINGLEMAP];
 } radial_t;
 
 
