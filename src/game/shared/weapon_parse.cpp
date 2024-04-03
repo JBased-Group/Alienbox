@@ -316,26 +316,26 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	szViewModel[0] = 0;
 	szWorldModel[0] = 0;
 	szAnimationPrefix[0] = 0;
-#ifndef INFESTED_DLL
+//#ifndef INFESTED_DLL
 	iSlot = 0;
 	iPosition = 0;
 	iMaxClip1 = 0;
 	iMaxClip2 = 0;
 	iDefaultClip1 = 0;
 	iDefaultClip2 = 0;
-#endif
+//#endif
 	iWeight = 0;
 	iRumbleEffect = -1;
 	bAutoSwitchTo = false;
 	bAutoSwitchFrom = false;
 	iFlags = 0;
-#ifndef INFESTED_DLL
+//#ifndef INFESTED_DLL
 	szAmmo1[0] = 0;
 	szAmmo2[0] = 0;
 	iAmmoType = 0;
 	iAmmo2Type = 0;
 	m_bMeleeWeapon = false;
-#endif
+//#endif
 	iSpriteCount = 0;
 	iconActive = 0;
 	iconInactive = 0;
@@ -371,7 +371,7 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	Q_strncpy( szViewModel, pKeyValuesData->GetString( "viewmodel" ), MAX_WEAPON_STRING );
 	Q_strncpy( szWorldModel, pKeyValuesData->GetString( "playermodel" ), MAX_WEAPON_STRING );
 	Q_strncpy( szAnimationPrefix, pKeyValuesData->GetString( "anim_prefix" ), MAX_WEAPON_PREFIX );
-#ifndef INFESTED_DLL
+//#ifndef INFESTED_DLL
 	iSlot = pKeyValuesData->GetInt( "bucket", 0 );
 	iPosition = pKeyValuesData->GetInt( "bucket_position", 0 );
 
@@ -389,7 +389,7 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	iMaxClip2 = pKeyValuesData->GetInt( "clip2_size", WEAPON_NOCLIP );					// Max secondary clips gun can hold (assume they don't use clips by default)
 	iDefaultClip1 = pKeyValuesData->GetInt( "default_clip", iMaxClip1 );		// amount of primary ammo placed in the primary clip when it's picked up
 	iDefaultClip2 = pKeyValuesData->GetInt( "default_clip2", iMaxClip2 );		// amount of secondary ammo placed in the secondary clip when it's picked up
-#endif
+//#endif
 
 	iWeight = pKeyValuesData->GetInt( "weight", 0 );
 
@@ -418,9 +418,9 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	m_bBuiltRightHanded = pKeyValuesData->GetBool( "BuiltRightHanded", true );
 	m_bAllowFlipping = pKeyValuesData->GetBool( "AllowFlipping", true );
 
-#ifndef INFESTED_DLL
+//#ifndef INFESTED_DLL
 	m_bMeleeWeapon = pKeyValuesData->GetBool( "MeleeWeapon", false );
-#endif
+//#endif
 
 #if defined(_DEBUG) && defined(HL2_CLIENT_DLL)
 	// make sure two weapons aren't in the same slot & position
@@ -440,7 +440,7 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	}
 #endif
 
-#ifndef INFESTED_DLL
+//#ifndef INFESTED_DLL
 	// Primary ammo used
 	const char *pAmmo = pKeyValuesData->GetString( "primary_ammo", "None" );
 	if ( strcmp("None", pAmmo) == 0 )
@@ -456,7 +456,7 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	else
 		Q_strncpy( szAmmo2, pAmmo, sizeof( szAmmo2 )  );
 	iAmmo2Type = GetAmmoDef()->Index( szAmmo2 );
-#endif
+//#endif
 
 	// Now read the weapon sounds
 	memset( aShootSounds, 0, sizeof( aShootSounds ) );

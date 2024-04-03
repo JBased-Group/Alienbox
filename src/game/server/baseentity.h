@@ -24,6 +24,7 @@
 #include "vscript_server.h"
 #include "branchingsingleton.h"
 #include "bittools.h"
+#include "squirrel/squirrel.h"
 
 class CDamageModifier;
 
@@ -41,7 +42,7 @@ using ResponseRules::IResponseSystem;
 class IEntitySaveUtils;
 class CRecipientFilter;
 
-
+void RegisterCBaseEntitySquirrelFunctions(SquirrelScript script);
 
 typedef CHandle<CBaseEntity> EHANDLE;
 

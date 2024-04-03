@@ -26,7 +26,10 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
+#ifndef CLIENT_DLL
+#define LIBRARY_NAME CBaseCombatWeaponBindings
+constexpr ListOfStuff<1> CBaseCombatWeaponBindings0x0000 = { 0,0 };
+#endif
 // The minimum time a hud hint for a weapon should be on screen. If we switch away before
 // this, then teh hud hint counter will be deremented so the hint will be shown again, as
 // if it had never been seen. The total display time for a hud hint is specified in client
@@ -224,7 +227,7 @@ void CBaseCombatWeapon::Precache( void )
 	// Get weapon data from script file
 	if ( ReadWeaponDataFromFileForSlot( filesystem, GetClassname(), &m_hWeaponFileInfo, GetEncryptionKey() ) )
 	{
-#ifndef INFESTED_DLL
+//#ifndef INFESTED_DLL
 		// Get the ammo indexes for the ammo's specified in the data file
 		if ( GetWpnData().szAmmo1[0] )
 		{
@@ -242,7 +245,7 @@ void CBaseCombatWeapon::Precache( void )
 				Msg("ERROR: Weapon (%s) using undefined secondary ammo type (%s)\n",GetClassname(),GetWpnData().szAmmo2);
 			}
 		}
-#endif
+//#endif
 #if defined( CLIENT_DLL )
 		gWR.LoadWeaponSprites( GetWeaponFileInfoHandle() );
 #endif
@@ -338,8 +341,8 @@ const char *CBaseCombatWeapon::GetPrintName( void ) const
 int CBaseCombatWeapon::GetMaxClip1( void ) const
 {
 #ifdef INFESTED_DLL
-	Assert( 0 );
-	return 0;
+	//Assert( 0 );
+	return 100;
 #else
 	return GetWpnData().iMaxClip1;
 #endif
@@ -351,8 +354,8 @@ int CBaseCombatWeapon::GetMaxClip1( void ) const
 int CBaseCombatWeapon::GetMaxClip2( void ) const
 {
 #ifdef INFESTED_DLL
-	Assert( 0 );
-	return 0;
+//	Assert( 0 );
+	return 100;
 #else
 	return GetWpnData().iMaxClip2;
 #endif
@@ -364,8 +367,8 @@ int CBaseCombatWeapon::GetMaxClip2( void ) const
 int CBaseCombatWeapon::GetDefaultClip1( void ) const
 {
 #ifdef INFESTED_DLL
-	Assert( 0 );
-	return 0;
+//	Assert( 0 );
+	return 100;
 #else
 	return GetWpnData().iDefaultClip1;
 #endif
@@ -377,8 +380,8 @@ int CBaseCombatWeapon::GetDefaultClip1( void ) const
 int CBaseCombatWeapon::GetDefaultClip2( void ) const
 {
 #ifdef INFESTED_DLL
-	Assert( 0 );
-	return 0;
+	//Assert( 0 );
+	return 100;
 #else
 	return GetWpnData().iDefaultClip2;
 #endif
@@ -2785,4 +2788,20 @@ int CBaseCombatWeapon::LookupAttachment( const char *pAttachmentName )
 
 	return BaseClass::LookupAttachment( pAttachmentName );
 }
+#endif
+#ifndef CLIENT_DLL
+SquirrelObject SQCBaseCombatWeapon;
+
+static SquirrelClassDecl entc[] = { "CBaseCombatWeapon", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseCombatWeapon,
+
+"",nullptr,nullptr };
+
+extern ISquirrel* g_pSquirrel;
+
+
+void RegisterCBaseCombatWeaponSquirrelFunctions(SquirrelScript script)
+{
+	g_pSquirrel->RegisterClasses(script, entc);
+}
+
 #endif

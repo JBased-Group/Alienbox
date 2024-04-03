@@ -5037,7 +5037,7 @@ void CBasePlayer::Spawn( void )
 
 	CreateViewModel();
 
-	SetCollisionGroup( COLLISION_GROUP_PLAYER );
+	SetCollisionGroup( COLLISION_GROUP_PLAYER_MOVEMENT );
 
 	// if the player is locked, make sure he stays locked
 	if ( m_iPlayerLocked )

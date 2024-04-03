@@ -105,6 +105,8 @@
 #include "vscript_server.h"
 #include "tier2/tier2_logging.h"
 #include "fmtstr.h"
+#include "squirrel/squirrel.h"
+#include "squirrel_entity.h"
 
 #ifdef INFESTED_DLL
 #include "missionchooser/iasw_mission_chooser.h"
@@ -135,7 +137,7 @@ extern IParticleSystemQuery *g_pParticleSystemQuery;
 extern ConVar commentary;
 
 
-IUploadGameStats *gamestatsuploader = NULL;
+IUploadGameStats *gamestatsuploader = nullptr;
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -148,43 +150,46 @@ ISaveRestoreBlockHandler *GetCommentarySaveRestoreBlockHandler();
 CUtlLinkedList<CMapEntityRef, unsigned short> g_MapEntityRefs;
 
 // Engine interfaces.
-IVEngineServer	*engine = NULL;
-IVoiceServer	*g_pVoiceServer = NULL;
+IVEngineServer	*engine = nullptr;
+IVoiceServer	*g_pVoiceServer = nullptr;
 #if !defined(_STATIC_LINKED)
-IFileSystem		*filesystem = NULL;
+IFileSystem		*filesystem = nullptr;
 #else
 extern IFileSystem *filesystem;
 #endif
-INetworkStringTableContainer *networkstringtable = NULL;
-IStaticPropMgrServer *staticpropmgr = NULL;
-IUniformRandomStream *random = NULL;
-IEngineSound *enginesound = NULL;
-ISpatialPartition *partition = NULL;
-IVModelInfo *modelinfo = NULL;
-IEngineTrace *enginetrace = NULL;
-IFileLoggingListener *filelogginglistener = NULL;
-IGameEventManager2 *gameeventmanager = NULL;
-IDataCache *datacache = NULL;
-IVDebugOverlay * debugoverlay = NULL;
-ISoundEmitterSystemBase *soundemitterbase = NULL;
-IServerPluginHelpers *serverpluginhelpers = NULL;
+INetworkStringTableContainer *networkstringtable = nullptr;
+IStaticPropMgrServer *staticpropmgr = nullptr;
+IUniformRandomStream *random = nullptr;
+IEngineSound *enginesound = nullptr;
+ISpatialPartition *partition = nullptr;
+IVModelInfo *modelinfo = nullptr;
+IEngineTrace *enginetrace = nullptr;
+IFileLoggingListener *filelogginglistener = nullptr;
+IGameEventManager2 *gameeventmanager = nullptr;
+IDataCache *datacache = nullptr;
+IVDebugOverlay * debugoverlay = nullptr;
+ISoundEmitterSystemBase *soundemitterbase = nullptr;
+IServerPluginHelpers *serverpluginhelpers = nullptr;
 #ifdef SERVER_USES_VGUI
-IEngineVGui *enginevgui = NULL;
+IEngineVGui *enginevgui = nullptr;
 #endif // SERVER_USES_VGUI
-IServerEngineTools *serverenginetools = NULL;
-IServerFoundry *serverfoundry = NULL;
-ISceneFileCache *scenefilecache = NULL;
+IServerEngineTools *serverenginetools = nullptr;
+IServerFoundry *serverfoundry = nullptr;
+ISceneFileCache *scenefilecache = nullptr;
 #ifdef SERVER_USES_VGUI
-IGameUIFuncs *gameuifuncs = NULL;
+IGameUIFuncs *gameuifuncs = nullptr;
 #endif // SERVER_USES_VGUI
-IXboxSystem *xboxsystem = NULL;	// Xbox 360 only
-IScriptManager *scriptmanager = NULL;
-IBlackBox *blackboxrecorder = NULL;
+IXboxSystem *xboxsystem = nullptr;	// Xbox 360 only
+IScriptManager *scriptmanager = nullptr;
+IBlackBox *blackboxrecorder = nullptr;
+ISquirrel* g_pSquirrel = nullptr;
+CUtlVector<SquirrelScript> squirrelscripts;
+CUtlStringMap<CUtlMap<int, SquirrelHandle>> squirrelhandles;
 
 #ifdef INFESTED_DLL
-IASW_Mission_Chooser *missionchooser = NULL;
-IMatchExtSwarm *g_pMatchExtSwarm = NULL;
-IConsistency *consistency = NULL;
+IASW_Mission_Chooser *missionchooser = nullptr;
+IMatchExtSwarm *g_pMatchExtSwarm = nullptr;
+IConsistency *consistency = nullptr;
 #endif
 
 IGameSystem *SoundEmitterSystem();
@@ -619,6 +624,8 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		CGlobalVars *pGlobals)
 {
 
+	
+
 	COM_TimestampedLog( "ConnectTier1/2/3Libraries - Start" );
 
 	ConnectTier1Libraries( &appSystemFactory, 1 );
@@ -630,6 +637,16 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	// Connected in ConnectTier1Libraries
 	if ( cvar == NULL )
 		return false;
+
+	CSysModule* pSquirrelDLL = g_pFullFileSystem->LoadModule("squirrel", "GAMEBIN", false);
+	if (pSquirrelDLL != nullptr)
+	{
+		CreateInterfaceFn squirrelFactory = Sys_GetFactory(pSquirrelDLL);
+		if (squirrelFactory != nullptr)
+		{
+			g_pSquirrel = (ISquirrel*)squirrelFactory(INTERFACESQUIRREL_VERSION, NULL);
+		}
+	}
 
 	COM_TimestampedLog( "Factories - Start" );
 
@@ -677,7 +694,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 
 	if ( !CommandLine()->CheckParm( "-noscripting") )
 	{
-		scriptmanager = (IScriptManager *)appSystemFactory( VSCRIPT_INTERFACE_VERSION, NULL );
+		//scriptmanager = (IScriptManager *)appSystemFactory( VSCRIPT_INTERFACE_VERSION, NULL );
 	}
 
 
@@ -939,9 +956,174 @@ bool CServerGameDLL::IsFramerateOk( )
 	return gpGlobals->frametime < sv_frametime_limit.GetFloat() * GetTickInterval();
 }
 
+class CSquirrelEntityFactory : public IEntityFactory
+{
+public:
+	CSquirrelEntityFactory(const char* pClassName, SquirrelScript script, SquirrelObject sqent)
+	{
+		theentity = sqent;
+		thescript = script;
+		EntityFactoryDictionary()->InstallFactory(this, pClassName);
+	}
+
+	IServerNetworkable* Create(const char* pClassName)
+	{
+		SquirrelValue sqobj = g_pSquirrel->InstantiateClass(thescript, theentity);
+		if (sqobj.type != SQUIRREL_OBJECT)
+		{
+			return 0;
+		}
+		CSquirrelEntity* newEnt = new CSquirrelEntity(sqobj.val_obj); // this is the only place 'new' should be used!
+		g_pSquirrel->SetObjectUserdata(thescript, sqobj.val_obj, newEnt, TypeIdentifier<CBaseEntity*>::id());
+		newEnt->PostConstructor(pClassName);
+		return newEnt->NetworkProp();
+	}
+
+	void Destroy(IServerNetworkable* pNetworkable)
+	{
+		if (pNetworkable)
+		{
+			pNetworkable->Release();
+		}
+	}
+
+	virtual size_t GetEntitySize()
+	{
+		return 0;
+	}
+
+	SquirrelObject theentity;
+	SquirrelScript thescript;
+};
+
+
+
+
+int SQ_SetPosition(SquirrelScript script)
+{
+	SquirrelObject obj;
+	if (!g_pSquirrel->GetSQObject(script, obj))
+	{
+		return 0;
+	}
+	float x, y, z;
+	if (!g_pSquirrel->GetArgs(script, "fff", &x, &y, &z))
+	{
+		return 0;
+	}
+	CBaseEntity* ent = (CBaseEntity*)g_pSquirrel->GetObjectUserdata(script, obj);
+	ent->SetAbsOrigin(Vector(x, y, z));
+	return 0;
+}
+
+int SQ_LinkEntityToClass(SquirrelScript script)
+{
+	SquirrelObject cls;
+	const char* str;
+	if (!g_pSquirrel->GetArgs(script, "sc", &str, &cls))
+	{
+		return 0;
+	}
+	g_pSquirrel->IncrementRefCount(script, cls);
+	new CSquirrelEntityFactory(str, script, cls);
+	return 0;
+}
+
+
+
+extern void RegisterCBaseCombatWeaponSquirrelFunctions(SquirrelScript script);
+
+void RegisterAllSquirrel(SquirrelScript script)
+{
+	RegisterCBaseEntitySquirrelFunctions(script);
+	RegisterCBaseCombatWeaponSquirrelFunctions(script);
+}
+
+SquirrelFunctionDecl hello[] = { "LinkEntityToClass",SQ_LinkEntityToClass,
+
+"",nullptr};
+
+void LoadMod(const char* path)
+{
+	int len = strlen(path);
+	if (len < 4 || !(path[len - 4] == '.' && path[len - 3] == 'n' && path[len - 2] == 'u' && path[len - 1] == 't'))
+		return;
+
+	CUtlBuffer codebuffer;
+
+	codebuffer.Clear();
+
+	if (g_pFullFileSystem->ReadFile(path, NULL, codebuffer))
+	{
+		SquirrelScript script = g_pSquirrel->LoadScript((const char*)(codebuffer.Base()), hello, RegisterAllSquirrel);
+		if (!script)
+		{
+			return;
+		}
+		
+		SquirrelValue returned = g_pSquirrel->CallFunction(script, "OnModStart", "");
+		switch (returned.type)
+		{
+		case SQUIRREL_INT:
+			Msg("Squirrel %s returned int : %i\n", path, returned.val_int);
+			break;
+		case SQUIRREL_BOOL:
+			Msg("Squirrel %s returned bool : %s\n", path, returned.val_bool ? "true" : "false");
+			break;
+		case SQUIRREL_FLOAT:
+			Msg("Squirrel %s returned float : %f\n", path, returned.val_float);
+			break;
+		case SQUIRREL_STRING:
+			Msg("Squirrel %s returned string : %s\n", path, returned.val_string);
+			break;
+		default:
+			Msg("Squirrel %s failed to execute/return a value\n", path);
+			break;
+		}
+		squirrelscripts.AddToTail(script);
+	}
+}
+
+
+void LoadFilesInDirectory(const char* modname, const char* folder, const char* filename)
+{
+	FileFindHandle_t findHandle;
+	char searchPath[MAX_PATH];
+	strcpy(searchPath, "mods/");
+	strncat(searchPath, folder, MAX_PATH);
+	strncat(searchPath, "/*", MAX_PATH);
+	const char* pszFileName = g_pFullFileSystem->FindFirst(searchPath, &findHandle);
+	char pszFileNameNoExt[MAX_PATH];
+	while (pszFileName)
+	{
+		if (pszFileName[0] == '.')
+		{
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		if (g_pFullFileSystem->FindIsDirectory(findHandle))
+		{
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		V_StripExtension(pszFileName, pszFileNameNoExt, MAX_PATH);
+		if (V_strcmp(filename, pszFileNameNoExt) == 0)
+		{
+			char pFilePath[MAX_PATH];
+			strcpy(pFilePath, "mods/");
+			strncat(pFilePath, folder, MAX_PATH);
+			V_AppendSlash(pFilePath, MAX_PATH);
+			strncat(pFilePath, pszFileName, MAX_PATH);
+			LoadMod(pFilePath);
+		}
+		pszFileName = g_pFullFileSystem->FindNext(findHandle);
+	}
+}
+
 // This is called when a new game is started. (restart, map)
 bool CServerGameDLL::GameInit( void )
 {
+	//t();
 	ResetGlobalState();
 	engine->ServerCommand( "exec game.cfg\n" );
 	engine->ServerExecute( );
@@ -952,6 +1134,25 @@ bool CServerGameDLL::GameInit( void )
 	{
 		gameeventmanager->FireEvent( event );
 	}
+
+	FileFindHandle_t findHandle;
+	const char* pszFileName = g_pFullFileSystem->FindFirst("mods/*", &findHandle);
+	while (pszFileName)
+	{
+		if (pszFileName[0] == '.')
+		{
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		if (g_pFullFileSystem->FindIsDirectory(findHandle))
+		{
+			LoadFilesInDirectory(pszFileName, pszFileName, "sv_main");
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		pszFileName = g_pFullFileSystem->FindNext(findHandle);
+	}
+	g_pFullFileSystem->FindClose(findHandle);
 
 	return true;
 }
@@ -969,9 +1170,9 @@ void CServerGameDLL::GameShutdown( void )
 	extern INetworkStringTable *g_StringTableReactiveDropMissions;
 	extern INetworkStringTable *g_StringTableReactiveDropChallenges;
 
-	g_StringTableReactiveDropCampaigns = NULL;
-	g_StringTableReactiveDropMissions = NULL;
-	g_StringTableReactiveDropChallenges = NULL;
+	g_StringTableReactiveDropCampaigns = nullptr;
+	g_StringTableReactiveDropMissions = nullptr;
+	g_StringTableReactiveDropChallenges = nullptr;
 #endif
 }
 
@@ -1021,7 +1222,7 @@ void EndRestoreEntities()
 	gEntList.CleanupDeleteList();
 
 	// HACKHACK: UNDONE: We need to redesign the main loop with respect to save/load/server activate
-	g_ServerGameDLL.ServerActivate( NULL, 0, 0 );
+	g_ServerGameDLL.ServerActivate( nullptr, 0, 0 );
 	CBaseEntity::SetAllowPrecache( false );
 }
 
@@ -1114,11 +1315,11 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 		{
 			// This is a single-player style level transition.
 			// Queue up an autosave one second into the level
-			CBaseEntity *pAutosave = CBaseEntity::Create( "logic_autosave", vec3_origin, vec3_angle, NULL );
+			CBaseEntity *pAutosave = CBaseEntity::Create( "logic_autosave", vec3_origin, vec3_angle, nullptr );
 			if ( pAutosave )
 			{
-				g_EventQueue.AddEvent( pAutosave, "Save", 1.0, NULL, NULL );
-				g_EventQueue.AddEvent( pAutosave, "Kill", 1.1, NULL, NULL );
+				g_EventQueue.AddEvent( pAutosave, "Save", 1.0, nullptr, nullptr );
+				g_EventQueue.AddEvent( pAutosave, "Kill", 1.1, nullptr, nullptr );
 			}
 		}
 	}
@@ -1190,6 +1391,12 @@ bool CServerGameDLL::LevelInit( const char *pMapName, char const *pMapEntities, 
 			fps_max.SetValue( 0 );
 		}
 	}
+
+	for (int i = 0; i < squirrelscripts.Count(); i++)
+	{
+		g_pSquirrel->CallFunction(squirrelscripts[i], "OnLevelInit", "");
+	}
+
 	return true;
 }
 
@@ -1228,7 +1435,7 @@ void CServerGameDLL::ServerActivate( edict_t *pEdictList, int edictCount, int cl
 		Msg( "ERROR: Entity delete queue not empty on level start!\n" );
 	}
 
-	for ( CBaseEntity *pClass = gEntList.FirstEnt(); pClass != NULL; pClass = gEntList.NextEnt(pClass) )
+	for ( CBaseEntity *pClass = gEntList.FirstEnt(); pClass != nullptr; pClass = gEntList.NextEnt(pClass) )
 	{
 		if ( pClass && !pClass->IsDormant() )
 		{
@@ -1413,7 +1620,7 @@ void CServerGameDLL::PreClientUpdate( bool simulating )
 	if ( sv_showhitboxes.GetInt() == 0 )
 	{
 		// assume it's text
-		CBaseEntity *pEntity = NULL;
+		CBaseEntity *pEntity = nullptr;
 
 		while (1)
 		{
@@ -1905,7 +2112,7 @@ bool CServerGameDLL::ShouldHideServer( void )
 void CServerGameDLL::InvalidateMdlCache()
 {
 	CBaseAnimating *pAnimating;
-	for ( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != NULL; pEntity = gEntList.NextEnt(pEntity) )
+	for ( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != nullptr; pEntity = gEntList.NextEnt(pEntity) )
 	{
 		pAnimating = pEntity->GetBaseAnimating();
 		if ( pAnimating )
@@ -1919,7 +2126,7 @@ void CServerGameDLL::InvalidateMdlCache()
 KeyValues * CServerGameDLL::FindLaunchOptionByValue( KeyValues *pLaunchOptions, char const *szLaunchOption )
 {
 	if ( !pLaunchOptions || !szLaunchOption || !*szLaunchOption )
-		return NULL;
+		return nullptr;
 
 	for ( KeyValues *val = pLaunchOptions->GetFirstSubKey(); val; val = val->GetNextKey() )
 	{
@@ -1928,7 +2135,7 @@ KeyValues * CServerGameDLL::FindLaunchOptionByValue( KeyValues *pLaunchOptions, 
 			return val;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 bool CServerGameDLL::ShouldPreferSteamAuth()
@@ -2068,7 +2275,7 @@ void CServerGameDLL::GetMatchmakingGameData( char *buf, size_t bufSize )
 
 	// Build a list of missions
 	int numMissions = 0;
-	for ( KeyValues *pMission = pAllMissions ? pAllMissions->GetFirstTrueSubKey() : NULL;
+	for ( KeyValues *pMission = pAllMissions ? pAllMissions->GetFirstTrueSubKey() : nullptr;
 		  pMission;
 		  pMission = pMission->GetNextTrueSubKey() )
 	{
@@ -2482,7 +2689,7 @@ edict_t* CServerGameEnts::BaseEntityToEdict( CBaseEntity *pEnt )
 	if ( pEnt )
 		return pEnt->edict();
 	else
-		return NULL;
+		return nullptr;
 }
 
 CBaseEntity* CServerGameEnts::EdictToBaseEntity( edict_t *pEdict )
@@ -2490,7 +2697,7 @@ CBaseEntity* CServerGameEnts::EdictToBaseEntity( edict_t *pEdict )
 	if ( pEdict )
 		return CBaseEntity::Instance( pEdict );
 	else
-		return NULL;
+		return nullptr;
 }
 
 
@@ -2535,8 +2742,8 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 #endif
 
 	// m_pTransmitAlways must be set if HLTV client
-	Assert( bIsHLTV == ( pInfo->m_pTransmitAlways != NULL) ||
-		    bIsReplay == ( pInfo->m_pTransmitAlways != NULL) );
+	Assert( bIsHLTV == ( pInfo->m_pTransmitAlways != nullptr) ||
+		    bIsReplay == ( pInfo->m_pTransmitAlways != nullptr) );
 #endif
 
 	for ( int i=0; i < nEdicts; i++ )
@@ -2764,7 +2971,7 @@ void CServerGameClients::ClientActive( edict_t *pEdict, bool bLoadGame )
 	if ( gpGlobals->eLoadType != MapLoad_LoadGame )
 	{
 		// notify all entities that the player is now in the game
-		for ( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != NULL; pEntity = gEntList.NextEnt(pEntity) )
+		for ( CBaseEntity *pEntity = gEntList.FirstEnt(); pEntity != nullptr; pEntity = gEntList.NextEnt(pEntity) )
 		{
 			pEntity->PostClientActive();
 		}
@@ -2847,7 +3054,7 @@ void CServerGameClients::ClientPutInServer( edict_t *pEntity, const char *player
 	if ( pPlayer )
 	{
 		bool bIsSplitScreenPlayer = engine->IsSplitScreenPlayer( pPlayer->entindex() );
-		CBasePlayer *pAttachedTo = NULL;
+		CBasePlayer *pAttachedTo = nullptr;
 		if ( bIsSplitScreenPlayer )
 		{
 			pAttachedTo = (CBasePlayer *)::GetContainingEntity( engine->GetSplitScreenPlayerAttachToEdict( pPlayer->entindex() ) );
@@ -2968,7 +3175,7 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 	g_pToolFrameworkServer->PreSetupVisibility();
 
 	// Find the client's PVS
-	CBaseEntity *pVE = NULL;
+	CBaseEntity *pVE = nullptr;
 	if ( pViewEntity )
 	{
 		pVE = GetContainingEntity( pViewEntity );
@@ -3099,7 +3306,7 @@ float CServerGameClients::ProcessUsercmds( edict_t *player, bf_read *buf, int nu
 	Assert( numcmds >= 0 );
 	Assert( ( totalcmds - numcmds ) >= 0 );
 
-	CBasePlayer *pPlayer = NULL;
+	CBasePlayer *pPlayer = nullptr;
 	CBaseEntity *pEnt = CBaseEntity::Instance(player);
 	if ( pEnt && pEnt->IsPlayer() )
 	{
@@ -3196,11 +3403,11 @@ CPlayerState *CServerGameClients::GetPlayerState( edict_t *player )
 {
 	// Is the client spawned yet?
 	if ( !player || !player->GetUnknown() )
-		return NULL;
+		return nullptr;
 
 	CBasePlayer *pBasePlayer = ( CBasePlayer * )CBaseEntity::Instance( player );
 	if ( !pBasePlayer )
-		return NULL;
+		return nullptr;
 
 	return &pBasePlayer->pl;
 }
@@ -3221,7 +3428,7 @@ void CServerGameClients::GetBugReportInfo( char *buf, int buflen )
 
 	if ( gpGlobals->maxClients == 1 )
 	{
-		CBaseEntity *ent = UTIL_PlayerByIndex(1) ? UTIL_PlayerByIndex(1)->FindPickerEntity() : NULL;
+		CBaseEntity *ent = UTIL_PlayerByIndex(1) ? UTIL_PlayerByIndex(1)->FindPickerEntity() : nullptr;
 		if ( ent )
 		{
 			Q_snprintf( buf, buflen, "Picker %i/%s - ent %s model %s\n",
@@ -3301,7 +3508,7 @@ void CServerGameClients::ClientCommandKeyValues( edict_t *pEntity, KeyValues *pK
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-static bf_write *g_pMsgBuffer = NULL;
+static bf_write *g_pMsgBuffer = nullptr;
 
 void EntityMessageBegin( CBaseEntity * entity, bool reliable /*= false*/ ) 
 {
@@ -3334,7 +3541,7 @@ void MessageEnd( void )
 
 	engine->MessageEnd();
 
-	g_pMsgBuffer = NULL;
+	g_pMsgBuffer = nullptr;
 }
 
 void MessageWriteByte( int iValue)

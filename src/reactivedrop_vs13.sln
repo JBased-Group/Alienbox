@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "missionchooser", "game\miss
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "launcher", "launcher\launcher.vcxproj", "{7A918355-15BB-408E-B730-2638B2E3F991}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "squirrel", "squirrel\squirrel.vcxproj", "{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -73,6 +75,18 @@ Global
 		{7A918355-15BB-408E-B730-2638B2E3F991}.Release|Win32.Build.0 = Release|Win32
 		{7A918355-15BB-408E-B730-2638B2E3F991}.Release|x64.ActiveCfg = Release|x64
 		{7A918355-15BB-408E-B730-2638B2E3F991}.Release|x64.Build.0 = Release|x64
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Debug|Win32.Build.0 = Debug|Win32
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Debug|x64.ActiveCfg = Debug|x64
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Debug|x64.Build.0 = Debug|x64
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Profile|Win32.ActiveCfg = Debug|Win32
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Profile|Win32.Build.0 = Debug|Win32
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Profile|x64.ActiveCfg = Debug|x64
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Profile|x64.Build.0 = Debug|x64
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Release|Win32.ActiveCfg = Release|Win32
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Release|Win32.Build.0 = Release|Win32
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Release|x64.ActiveCfg = Release|x64
+		{CEDD8CDF-0B43-457A-A1BC-2ABCAA3C36D0}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

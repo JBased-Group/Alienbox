@@ -63,3 +63,5 @@ src/utils/*/Release/
 /src/materialsystem/stdshaders/.vs
 /src/materialsystem/shaderlib/Release
 /src/dx9sdk/lib
+/src/squirrel/Debug
+/src/squirrel/Release

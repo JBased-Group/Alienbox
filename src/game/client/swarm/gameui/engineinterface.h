@@ -24,6 +24,7 @@
 #include "icvar.h"
 #include "tier2/tier2.h"
 #include "matchmaking/imatchframework.h"
+#include "squirrel/squirrel.h"
 
 #ifdef SWARM_DLL
 #include "matchmaking/swarm/imatchext_swarm.h"

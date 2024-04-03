@@ -71,6 +71,7 @@
 #include "cellcoord.h"
 #include "sendprop_priorities.h"
 #include "videocfg/videocfg.h"
+#include "squirrel/squirrel.h"
 #ifdef INFESTED_DLL
 #include "asw_trace_filter.h"
 #include "asw_player.h"
@@ -79,6 +80,10 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+constexpr ListOfStuff<1> CBaseEntityBindings0x0000 = { 0,0 };
+#define LIBRARY_NAME CBaseEntityBindings
+
 
 extern bool g_bTestMoveTypeStepSimulation;
 extern ConVar sv_vehicle_autoaim_scale;
@@ -995,7 +1000,9 @@ Vector CBaseEntity::HeadTarget( const Vector &posSrc )
 //-----------------------------------------------------------------------------
 // Methods related to fade distance
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetFadeDistance( float minFadeDist, float maxFadeDist )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetFadeDistance,( float minFadeDist, float maxFadeDist ))
+#include "squirrel/AddToBindings.h"
 {
 	m_fadeMinDist = minFadeDist;
 	m_fadeMaxDist = maxFadeDist;
@@ -1024,7 +1031,9 @@ struct TimedOverlay_t
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,AddTimedOverlay,( const char *msg, int endTime ))
+#include "squirrel/AddToBindings.h"
 {
 	TimedOverlay_t *pNewTO = new TimedOverlay_t;
 	int len = strlen(msg);
@@ -1041,7 +1050,9 @@ void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CBaseEntity::DrawBBoxOverlay( float flDuration )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,DrawBBoxOverlay,( float flDuration ))
+#include "squirrel/AddToBindings.h"
 {
 	if (edict())
 	{
@@ -1058,8 +1069,9 @@ void CBaseEntity::DrawBBoxOverlay( float flDuration )
 	}
 }
 
-
-void CBaseEntity::DrawAbsBoxOverlay()
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,DrawAbsBoxOverlay,())
+#include "squirrel/AddToBindings.h"
 {
 	int red = 0;
 	int green = 200;
@@ -1089,7 +1101,9 @@ void CBaseEntity::DrawRBoxOverlay()
 //-----------------------------------------------------------------------------
 // Purpose: Draws an axis overlay at the origin and angles of the entity
 //-----------------------------------------------------------------------------
-void CBaseEntity::SendDebugPivotOverlay( void )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SendDebugPivotOverlay,())
+#include "squirrel/AddToBindings.h"
 {
 	if ( edict() )
 	{
@@ -1105,7 +1119,10 @@ void CBaseEntity::SendDebugPivotOverlay( void )
 //			 The color of the text
 // Output  :
 //------------------------------------------------------------------------------
-void CBaseEntity::EntityText( int text_offset, const char *text, float duration, int r, int g, int b, int a )
+
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,EntityText,( int text_offset, const char *text, float duration, int r, int g, int b, int a ))
+#include "squirrel/AddToBindings.h"
 {
 	Vector origin;
 	Vector vecLocalCenter;
@@ -1989,7 +2006,9 @@ float CBaseEntity::GetAttackDamageScale( CBaseEntity *pVictim )
 //-----------------------------------------------------------------------------
 // Purpose: Returns a value that scales all damage done to this entity
 //-----------------------------------------------------------------------------
-float CBaseEntity::GetReceivedDamageScale( CBaseEntity *pAttacker )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (float,CBaseEntity,GetReceivedDamageScale,( CBaseEntity *pAttacker ))
+#include "squirrel/AddToBindings.h"
 {
 	float flScale = 1;
 #ifdef DAMAGE_MODIFIERS_USED
@@ -3151,8 +3170,9 @@ void CBaseEntity::VPhysicsUpdatePusher( IPhysicsObject *pPhysics )
 	}
 }
 
-
-void CBaseEntity::SetMoveDoneTime( float flDelay )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetMoveDoneTime,( float flDelay ))
+#include "squirrel/AddToBindings.h"
 {
 	if (flDelay >= 0)
 	{
@@ -3961,8 +3981,9 @@ bool CBaseEntity::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, tr
 	return false;
 }
 
-
-void CBaseEntity::SetOwnerEntity( CBaseEntity* pOwner )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetOwnerEntity,( CBaseEntity* pOwner ))
+#include "squirrel/AddToBindings.h"
 {
 	if ( m_hOwnerEntity.Get() != pOwner )
 	{
@@ -4072,7 +4093,9 @@ CBaseEntity* CBaseEntity::Instance( const CBaseHandle &hEnt )
 	return gEntList.GetBaseEntity( hEnt );
 }
 
-int CBaseEntity::GetTransmitState( void )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (int,CBaseEntity,GetTransmitState,( void ))
+#include "squirrel/AddToBindings.h"
 {
 	edict_t *ed = edict();
 
@@ -4082,7 +4105,9 @@ int CBaseEntity::GetTransmitState( void )
 	return ed->m_fStateFlags;
 }
 
-int	CBaseEntity::SetTransmitState( int nFlag)
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (int,CBaseEntity,SetTransmitState,( int nFlag ))
+#include "squirrel/AddToBindings.h"
 {
 	edict_t *ed = edict();
 
@@ -4293,7 +4318,9 @@ void CBaseEntity::ComputeWorldSpaceSurroundingBox( Vector *pMins, Vector *pMaxs 
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-const char *CBaseEntity::GetDebugName(void)
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (const char *,CBaseEntity,GetDebugName,())
+#include "squirrel/AddToBindings.h"
 {
 	if ( this == NULL )
 		return "<<null>>";
@@ -4754,7 +4781,9 @@ void CBaseEntity::InputSetParent( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 // Purpose: 
 //------------------------------------------------------------------------------
-void CBaseEntity::SetParentAttachment( const char *szInputName, const char *szAttachment, bool bMaintainOffset )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetParentAttachment,( const char *szInputName, const char *szAttachment, bool bMaintainOffset ))
+#include "squirrel/AddToBindings.h"
 {
 	// Must have a parent
 	if ( !m_pParent )
@@ -4883,7 +4912,9 @@ void CBaseEntity::GetVectors(Vector* pForward, Vector* pRight, Vector* pUp) cons
 // Purpose: Sets the model, validates that it's of the appropriate type
 // Input  : *szModelName - 
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetModel( const char *szModelName )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetModel,( const char *szModelName ))
+#include "squirrel/AddToBindings.h"
 {
 	int modelIndex = modelinfo->GetModelIndex( szModelName );
 	const model_t *model = modelinfo->GetModel( modelIndex );
@@ -4922,7 +4953,9 @@ void CBaseEntity::InputSetTeam( inputdata_t &inputdata )
 //-----------------------------------------------------------------------------
 // Purpose: Put the entity in the specified team
 //-----------------------------------------------------------------------------
-void CBaseEntity::ChangeTeam( int iTeamNum )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,ChangeTeam,( int iTeamNum ))
+#include "squirrel/AddToBindings.h"
 {
 	m_iTeamNum = iTeamNum;
 }
@@ -5546,7 +5579,9 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 // Input  : *name - model name
 // Output : int -- model index for model
 //-----------------------------------------------------------------------------
-int CBaseEntity::PrecacheModel( const char *name )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (int,CBaseEntity,PrecacheModel,( const char *name ))
+#include "squirrel/AddToBindings.h"
 {
 	Assert( name && *name );
 	if ( !name || !*name )
@@ -8790,3 +8825,36 @@ void CC_Ent_Orient( const CCommand& args )
 }
 
 static ConCommand ent_orient("ent_orient", CC_Ent_Orient, "Orient the specified entity to match the player's angles. By default, only orients target entity's YAW. Use the 'allangles' option to orient on all axis.\n\tFormat: ent_orient <entity name> <optional: allangles>", FCVAR_CHEAT);
+
+SquirrelObject SQCBaseEntity;
+
+static SquirrelClassDecl entc[] = { "CBaseEntity", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseEntity,
+
+"",nullptr,nullptr };
+
+extern ISquirrel* g_pSquirrel;
+int SQ_CreateEntityByName(SquirrelScript script)
+{
+	const char* name;
+	if (!g_pSquirrel->GetArgs(script, "s", &name))
+	{
+		return 0;
+	}
+	
+	CBaseEntity* ent = CreateEntityByName(name);
+	if (!ent)
+	{
+		return 0;
+	}
+	SquirrelValue obj = g_pSquirrel->InstantiateClass(script, SQCBaseEntity);
+	g_pSquirrel->SetObjectUserdata(script, obj.val_obj, ent, TypeIdentifier<CBaseEntity*>::id());
+	g_pSquirrel->PushValue(script, obj);
+	return 1;
+}
+
+
+void RegisterCBaseEntitySquirrelFunctions(SquirrelScript script)
+{
+	g_pSquirrel->RegisterClasses(script,entc);
+	g_pSquirrel->AddFunction(script, "CreateEntityByName", SQ_CreateEntityByName);
+}

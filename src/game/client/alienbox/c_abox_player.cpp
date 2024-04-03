@@ -9,6 +9,7 @@ LINK_ENTITY_TO_CLASS(player, C_ABox_Player);
 
 C_ABox_Player::C_ABox_Player() : BaseClass()
 {
+
 }
 
 C_ABox_Player::~C_ABox_Player()

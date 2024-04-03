@@ -267,14 +267,14 @@ if ERRORLEVEL 1 exit 1
       <OutputFile>$(OutDir)client.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Message>Publishing to ..\..\..\reactivedrop\bin\.</Message>
-      <Command>if exist "..\..\..\reactivedrop\bin\." goto ValveStart
-mkdir "..\..\..\reactivedrop\bin\."
+      <Message>Publishing to ..\..\..\alienbox\bin\.</Message>
+      <Command>if exist "..\..\..\alienbox\bin\." goto ValveStart
+mkdir "..\..\..\alienbox\bin\."
 :ValveStart
-copy "$(TargetDir)"$(TargetFileName) "..\..\..\reactivedrop\bin\.\$(TargetFileName)"
+copy "$(TargetDir)"$(TargetFileName) "..\..\..\alienbox\bin\.\$(TargetFileName)"
 if ERRORLEVEL 1 goto BuildEventFailed
-if exist "$(TargetDir)"$(TargetName).map copy "$(TargetDir)"$(TargetName).map "..\..\..\reactivedrop\bin\.\$(TargetName).map"
-copy "$(TargetDir)"$(TargetName).pdb "..\..\..\reactivedrop\bin\.\$(TargetName).pdb"
+if exist "$(TargetDir)"$(TargetName).map copy "$(TargetDir)"$(TargetName).map "..\..\..\alienbox\bin\.\$(TargetName).map"
+copy "$(TargetDir)"$(TargetName).pdb "..\..\..\alienbox\bin\.\$(TargetName).pdb"
 if ERRORLEVEL 1 goto BuildEventFailed
 goto BuildEventOK
 :BuildEventFailed
@@ -433,6 +433,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd clien
     <ClInclude Include="..\shared\swarm\rd_map_texture_shared.h" />
     <ClInclude Include="..\shared\swarm\rd_vgui_vscript_shared.h" />
     <ClInclude Include="alienbox\c_abox_player.h" />
+    <ClInclude Include="c_abox_weapon.h" />
     <ClInclude Include="swarm\c_asw_colonist.h" />
     <ClInclude Include="swarm\c_rd_infection_deathmatch_stats.h" />
     <ClInclude Include="swarm\gameui\swarm\vgenericchoicelist.h" />
@@ -940,6 +941,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd clien
     <ClCompile Include="commentary_modelviewer.cpp" />
     <ClCompile Include="convarproxy.cpp" />
     <ClCompile Include="cycleproxy.cpp" />
+    <ClCompile Include="c_abox_weapon.cpp" />
     <ClCompile Include="c_ai_basehumanoid.cpp" />
     <ClCompile Include="c_ai_basenpc.cpp" />
     <ClCompile Include="c_baseanimating.cpp" />

@@ -39,9 +39,9 @@ void PatchSearchPath(KeyValues* keyv, const char* find, const char* basepath)
 			return;
 		}
 	}
-}
+}//xorusr: sum changes in this func
 
-//xorusr: sum changes in this func
+
 KeyValues* GetKeyvaluesFromFile(const char* dir, const char* name)
 {
 	FILE* fp = fopen(dir, "r");
@@ -136,11 +136,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	char* pPath = getenv("PATH");
 	
 	//xorusr
+#if !defined _DEBUG
 	if (!isProcessRunning("steam.exe"))
 	{
 		MessageBoxW(NULL, L"Start the steam client first!", L"Error", MB_OK | MB_ICONERROR);
 		exit(0); // closing the launcher if steam is offline
 	}
+#endif
 
 	// Use the .EXE name to determine the root directory
 	if (!::GetModuleFileNameA((HINSTANCE)GetModuleHandle(NULL), g_szBasedir, MAX_PATH))

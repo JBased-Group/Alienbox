@@ -17,6 +17,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>Server (Swarm)</ProjectName>
     <ProjectGuid>{EE8FAD9C-DFAF-414B-A11D-7697E1A28A27}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -124,6 +125,7 @@ if ERRORLEVEL 1 exit 1
       <DisableSpecificWarnings>26495;26812</DisableSpecificWarnings>
       <SDLCheck>true</SDLCheck>
       <FloatingPointExceptions>true</FloatingPointExceptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -222,6 +224,7 @@ if ERRORLEVEL 1 exit 1
       <ErrorReporting>Prompt</ErrorReporting>
       <DisableSpecificWarnings>26495;26812</DisableSpecificWarnings>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -262,14 +265,14 @@ if ERRORLEVEL 1 exit 1
       <OutputFile>$(OutDir)server.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Message>Publishing to ..\..\..\reactivedrop\bin\.</Message>
-      <Command>if exist "..\..\..\reactivedrop\bin\." goto ValveStart
-mkdir "..\..\..\reactivedrop\bin\."
+      <Message>Publishing to ..\..\..\alienbox\bin\.</Message>
+      <Command>if exist "..\..\..\alienbox\bin\." goto ValveStart
+mkdir "..\..\..\alienbox\bin\."
 :ValveStart
-copy "$(TargetDir)"$(TargetFileName) "..\..\..\reactivedrop\bin\.\$(TargetFileName)"
+copy "$(TargetDir)"$(TargetFileName) "..\..\..\alienbox\bin\.\$(TargetFileName)"
 if ERRORLEVEL 1 goto BuildEventFailed
-if exist "$(TargetDir)"$(TargetName).map copy "$(TargetDir)"$(TargetName).map "..\..\..\reactivedrop\bin\.\$(TargetName).map"
-copy "$(TargetDir)"$(TargetName).pdb "..\..\..\reactivedrop\bin\.\$(TargetName).pdb"
+if exist "$(TargetDir)"$(TargetName).map copy "$(TargetDir)"$(TargetName).map "..\..\..\alienbox\bin\.\$(TargetName).map"
+copy "$(TargetDir)"$(TargetName).pdb "..\..\..\alienbox\bin\.\$(TargetName).pdb"
 if ERRORLEVEL 1 goto BuildEventFailed
 goto BuildEventOK
 :BuildEventFailed
@@ -818,6 +821,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClCompile Include="..\shared\weapon_parse.cpp" />
     <ClCompile Include="..\shared\weapon_proficiency.cpp" />
     <ClCompile Include="abox_player.cpp" />
+    <ClCompile Include="abox_weapon.cpp" />
     <ClCompile Include="ai_activity.cpp" />
     <ClCompile Include="ai_baseactor.cpp" />
     <ClCompile Include="ai_basehumanoid.cpp" />
@@ -1163,6 +1167,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClCompile Include="spatialentity.cpp" />
     <ClCompile Include="spotlightend.cpp" />
     <ClCompile Include="sprite_perfmonitor.cpp" />
+    <ClCompile Include="squirrel_entity.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -1452,6 +1457,9 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClInclude Include="..\..\public\Color.h" />
     <ClInclude Include="..\..\public\const.h" />
     <ClInclude Include="..\..\public\coordsize.h" />
+    <ClInclude Include="..\..\public\counter.h" />
+    <ClInclude Include="..\..\public\counterAinc.h" />
+    <ClInclude Include="..\..\public\counterBinc.h" />
     <ClInclude Include="..\..\public\datamap.h" />
     <ClInclude Include="..\..\public\dlight.h" />
     <ClInclude Include="..\..\public\dt_common.h" />
@@ -1609,6 +1617,10 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClInclude Include="..\..\public\winlite.h" />
     <ClInclude Include="..\..\public\worldsize.h" />
     <ClInclude Include="..\..\public\zip_uncompressed.h" />
+    <ClInclude Include="..\public\counter.h" />
+    <ClInclude Include="..\public\counterAinc.h" />
+    <ClInclude Include="..\public\counterBinc.h" />
+    <ClInclude Include="..\public\squirrel\AddToBindings.h" />
     <ClInclude Include="..\shared\achievementmgr.h" />
     <ClInclude Include="..\shared\achievement_saverestore.h" />
     <ClInclude Include="..\shared\activitylist.h" />
@@ -1863,6 +1875,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClInclude Include="..\shared\weapon_parse.h" />
     <ClInclude Include="..\shared\weapon_proficiency.h" />
     <ClInclude Include="abox_player.h" />
+    <ClInclude Include="abox_weapon.h" />
     <ClInclude Include="ai_baseactor.h" />
     <ClInclude Include="ai_basehumanoid.h" />
     <ClInclude Include="ai_basenpc.h" />
@@ -2114,6 +2127,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClInclude Include="spatialentity.h" />
     <ClInclude Include="spawn_helper_nut.h" />
     <ClInclude Include="spotlightend.h" />
+    <ClInclude Include="squirrel_entity.h" />
     <ClInclude Include="steamjet.h" />
     <ClInclude Include="swarm\asw_ai_behavior.h" />
     <ClInclude Include="swarm\asw_ai_behavior_advance.h" />
