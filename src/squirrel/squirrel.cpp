@@ -145,7 +145,7 @@ SquirrelValue CSquirrel::InstantiateClass(SquirrelScript script, SquirrelObject 
 	}
 	sq_getstackobj(v, -1, (HSQOBJECT*)&ret.val_obj);
 	sq_addref(v, (HSQOBJECT*)&ret.val_obj);
-	sq_pop(v, 2);
+	sq_pop(v, 1);
 	ret.type = SQUIRREL_OBJECT;
 	return ret;
 }
@@ -259,13 +259,13 @@ SquirrelScript CSquirrel::LoadScript(const char* script, SquirrelFunctionDecl* i
 
 	sq_pushroottable(v);
 	SQRESULT callres = sq_call(v, 1, false, true);
-	for (int i = 0; i < objects.Count(); i++)
-	{
-		if (sq_getrefcount(v, &objects[i]))
-		{
-			sq_release(v, &objects[i]);
-		}
-	}
+	//for (int i = 0; i < objects.Count(); i++)
+	//{
+	//	if (sq_getrefcount(v, &objects[i]))
+	//	{
+	//		sq_release(v, &objects[i]);
+	//	}
+	//}
 	sq_settop(v, 0);
 	sq_collectgarbage(v);
 	if (SQ_FAILED(callres))
@@ -322,6 +322,10 @@ SquirrelValue CSquirrel::CallFunction(SquirrelScript script, const char* fun, co
 	va_end(args);
 	if (sq_call(v, count+1, 1, 0))
 	{
+		sq_getlasterror(v);
+		const char* msg;
+		sq_getstring(v, -1, &msg);
+		Msg("ERROR: %s\n", msg);
 		return ret;
 	}
 	SQObjectType type = sq_gettype(v, -1);

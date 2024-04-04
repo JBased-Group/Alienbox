@@ -119,12 +119,33 @@ constexpr bool IsPointer<Type*> = true;
 template <typename Type>
 constexpr bool IsPointer<Type* const> = true;
 
+template <typename Type>
+constexpr bool IsPointer<Type&> = true;
+
+
+
+
+
 
 template <typename Type, typename NotTheSameType>
 constexpr bool Same = false;
 
 template <typename Type>
 constexpr bool Same<Type, Type> = true;
+
+template <typename Return_Type, typename Class_Name, typename... Argument_Types, typename Type>
+constexpr bool IsThiscall(Return_Type(Class_Name::*)(Argument_Types...), Type t)
+{
+	return Same<Return_Type(__thiscall Class_Name::*)(Argument_Types...), Type>;
+}
+
+template <typename Return_Type, typename... Argument_Types, typename Type>
+constexpr bool IsCDecl(Return_Type(*)(Argument_Types...), Type t)
+{
+	return Same<Return_Type(__cdecl *)(Argument_Types...), Type>;
+}
+
+
 
 template <typename Value_Type>
 constexpr const char GetType()
@@ -146,11 +167,15 @@ constexpr const char GetType()
 	return '?';
 }
 
+typedef bool (*GenericConverterToCpp)(SquirrelScript, void**, int);
+typedef bool (*GenericConverterFromCpp)(SquirrelScript, void*);
+
 template <unsigned int Size>
 struct ReturnableString
 {
 	char Data[Size];
 	const int* TypeNames[Size];
+	void* ConvertCpp[Size];
 
 	operator char* () const
 	{
@@ -196,6 +221,23 @@ constexpr ReturnableString<Size> operator +(ReturnableString<Size> Left, const i
 	return Left;
 }
 
+template <unsigned int Size>
+constexpr ReturnableString<Size> operator +(ReturnableString<Size> Left, void* TypeId)
+{
+	for (int i = 0; i < Size - 1; i++)
+	{
+		if (Left.ConvertCpp[i] == 0)
+		{
+			Left.ConvertCpp[i] = TypeId;
+			return Left;
+		}
+	}
+	return Left;
+}
+
+template <typename Type>
+bool ConvertToCpp(SquirrelScript script, Type* valOut, int a);
+
 // Thanks https://stackoverflow.com/a/77093313
 template <class C>
 struct TypeIdentifier {
@@ -203,6 +245,50 @@ struct TypeIdentifier {
 	constexpr static const int* id() {
 		return &_id;
 	}
+	static const GenericConverterToCpp ConvertToCpp()
+	{
+		return (GenericConverterToCpp)(::ConvertToCpp<C>);
+	}
+	static bool ConvertFromCpp(SquirrelScript script, C val);
+};
+
+template <class C>
+struct TypeIdentifier<C&>
+{
+	constexpr static const int* id() {
+		return TypeIdentifier<C*>::id();
+	}
+	static const GenericConverterToCpp ConvertToCpp()
+	{
+		return (GenericConverterToCpp)(::ConvertToCpp<C*>);
+	}
+	static bool ConvertFromCpp(SquirrelScript script, C* val);
+};
+
+template <class C>
+struct TypeIdentifier<const C*>
+{
+	constexpr static const int* id() {
+		return TypeIdentifier<C*>::id();
+	}
+	static const GenericConverterToCpp ConvertToCpp()
+	{
+		return (GenericConverterToCpp)(::ConvertToCpp<C*>);
+	}
+	static bool ConvertFromCpp(SquirrelScript script, C* val);
+};
+
+template <class C>
+struct TypeIdentifier<const C&>
+{
+	constexpr static const int* id() {
+		return TypeIdentifier<C*>::id();
+	}
+	static const GenericConverterToCpp ConvertToCpp()
+	{
+		return (GenericConverterToCpp)(::ConvertToCpp<C*>);
+	}
+	static bool ConvertFromCpp(SquirrelScript script, C* val);
 };
 
 template <typename Class_Name, typename Return_Type, typename... Argument_Types>
@@ -211,14 +297,67 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 	constexpr unsigned int Size = sizeof...(Argument_Types) + 2;
 	ReturnableString<Size> Ret{};
 	Ret.Data[0] = GetType<Return_Type>();
-	Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
+	if constexpr (!Same<Return_Type, void>)
+	{
+		Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<Return_Type>::ConvertToCpp;
+	}
+	else
+	{
+		Ret.TypeNames[0] = TypeIdentifier<void*>::id();
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<int>::ConvertToCpp;
+	}
 	((Ret = Ret + GetType<Argument_Types>()), ...);
 	((Ret = Ret + TypeIdentifier<Argument_Types>::id()), ...);
+	((Ret = Ret + (void*)TypeIdentifier<Argument_Types>::ConvertToCpp), ...);
+
 	return Ret;
 }
 
 
+template <typename Class_Name, typename Return_Type, typename... Argument_Types>
+constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Type(Class_Name::*)(Argument_Types...) const)
+{
+	constexpr unsigned int Size = sizeof...(Argument_Types) + 2;
+	ReturnableString<Size> Ret{};
+	Ret.Data[0] = GetType<Return_Type>();
+	if constexpr (!Same<Return_Type, void>)
+	{
+		Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<Return_Type>::ConvertToCpp;
+	}
+	else
+	{
+		Ret.TypeNames[0] = TypeIdentifier<void*>::id();
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<int>::ConvertToCpp;
+	}
+	((Ret = Ret + GetType<Argument_Types>()), ...);
+	((Ret = Ret + TypeIdentifier<Argument_Types>::id()), ...);
+	((Ret = Ret + (void*)TypeIdentifier<Argument_Types>::ConvertToCpp), ...);
+	return Ret;
+}
 
+template <typename Return_Type, typename... Argument_Types>
+constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Type(*)(Argument_Types...))
+{
+	constexpr unsigned int Size = sizeof...(Argument_Types) + 2;
+	ReturnableString<Size> Ret{};
+	Ret.Data[0] = GetType<Return_Type>();
+	if constexpr (!Same<Return_Type, void>)
+	{
+		Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<Return_Type>::ConvertToCpp;
+	}
+	else
+	{
+		Ret.TypeNames[0] = TypeIdentifier<void*>::id();
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<int>::ConvertToCpp;
+	}
+	((Ret = Ret + GetType<Argument_Types>()), ...);
+	((Ret = Ret + TypeIdentifier<Argument_Types>::id()), ...);
+	((Ret = Ret + (void*)TypeIdentifier<Argument_Types>::ConvertToCpp), ...);
+	return Ret;
+}
 
 union FourByteValue
 {
@@ -274,18 +413,72 @@ constexpr ListOfStuff<Count + 1> Append(ListOfStuff<Count> List, SquirrelFunctio
 
 
 #define SQ_FUNCTION_RET_IMPL(a,b,c,d) a
-#define SQ_FUNCTION_NAME_IMPL(a,b,c,d) c
 #define SQ_FUNCTION_CLS_IMPL(a,b,c,d) b
-#define SQ_FUNCTION_CLSNAME_IMPL(a,b,c,d) b::c
-#define SQ_FUNCTION_CLS_NAME_WRAPPED_IMPL(a,b,c,d) b##_##c##_WRAPPED
-#define SQ_FUNCTION_CLS_NAME_EXPAND_IMPL(a,b,c,d) b##_##c##_EXPAND
+#define SQ_FUNCTION_CLSNAME_IMPL(b,NO,...) b##__VA_ARGS__
+#define SQ_FUNCTION_CLSNAME_FINALIZER_2(a) SQ_FUNCTION_CLSNAME_IMPL a
+#define SQ_FUNCTION_CLSNAME_FINALIZER(a) SQ_FUNCTION_CLSNAME_FINALIZER_2(a)
+
+#define SQ_FUNCTION_CLSNAME_WRAPPED_IMPL(b,NO,...) b##__VA_ARGS__##_WRAPPED
+#define SQ_FUNCTION_CLSNAME_WRAPPED_FINALIZER_2(a) SQ_FUNCTION_CLSNAME_WRAPPED_IMPL a
+#define SQ_FUNCTION_CLSNAME_WRAPPED_FINALIZER(a) SQ_FUNCTION_CLSNAME_WRAPPED_FINALIZER_2(a)
+
+#define SQ_FUNCTION_CLSNAME_EXPAND_IMPL(b,NO,...) b##__VA_ARGS__##_EXPAND
+#define SQ_FUNCTION_CLSNAME_EXPAND_FINALIZER_2(a) SQ_FUNCTION_CLSNAME_EXPAND_IMPL a
+#define SQ_FUNCTION_CLSNAME_EXPAND_FINALIZER(a) SQ_FUNCTION_CLSNAME_EXPAND_FINALIZER_2(a)
+
+#define SQ_HASPARENS(...) ,
+#define SQ_COMMA_X(a,b,c,...) SQ_IF_ ## c
+#define SQ_COMMA(a) SQ_COMMA_X a
+#define SQ_IF_0 
+#define SQ_IF_1 ,
+
+#define SQ_FUNCTION_CLSNAME_PROXY(a,b,c,...) SQ_FUNCTION_CLSNAME_FINALIZER((b , Hi SQ_COMMA((Hi SQ_HASPARENS __VA_ARGS__ Hi ,1, 0)) ::c))
+#define SQ_FUNCTION_CLS_NAME_WRAPPED_IMPL(a,b,c,...) SQ_FUNCTION_CLSNAME_WRAPPED_FINALIZER((b , Hi SQ_COMMA((Hi SQ_HASPARENS __VA_ARGS__ Hi ,1, 0)) _##c))
+#define SQ_FUNCTION_CLS_NAME_EXPAND_IMPL(a,b,c,...) SQ_FUNCTION_CLSNAME_EXPAND_FINALIZER((b , Hi SQ_COMMA((Hi SQ_HASPARENS __VA_ARGS__ Hi ,1, 0)) _##c))
+
+
+#define SQ_CHECK_X(a,b,c,...) c
+#define SQ_CHECK(a) SQ_CHECK_X a
+#define SQ_FUNCTION_NAME_IMPL(a,b,c,...) SQ_CHECK((Hi SQ_HASPARENS c Hi , b , c ))
 #define SQ_FUNCTION_NAME(a) SQ_FUNCTION_NAME_IMPL a
-#define SQ_FUNCTION_DECL(a) CONCATFUNC a
+#define SQ_FUNCTION_DECL_IMPL(a,b,c,...) SQ_CHECK((Hi SQ_HASPARENS c Hi ,a b c, a b::c __VA_ARGS__))
+#define SQ_FUNCTION_DECL(a) SQ_FUNCTION_DECL_IMPL a
 #define SQ_FUNCTION_CLS(a) SQ_FUNCTION_CLS_IMPL a
 #define SQ_FUNCTION_RET(a) SQ_FUNCTION_RET_IMPL a
-#define SQ_FUNCTION_CLSNAME(a) SQ_FUNCTION_CLSNAME_IMPL a
+#define SQ_FUNCTION_CLSNAME(a) SQ_FUNCTION_CLSNAME_PROXY a
 #define SQ_FUNCTION_CLS_NAME_WRAPPED(a) SQ_FUNCTION_CLS_NAME_WRAPPED_IMPL a
 #define SQ_FUNCTION_CLS_NAME_EXPAND(a) SQ_FUNCTION_CLS_NAME_EXPAND_IMPL a
+
+#define SQ_FUNCTION_DECLFUNC_PROXY(a,b,c,...) SQ_CHECK((Hi SQ_HASPARENS c Hi ,a b c;, ))
+#define SQ_FUNCTION_DECLFUNC(a) SQ_FUNCTION_DECLFUNC_PROXY a
+
+#define STARTLIBRARY constexpr ListOfStuff<COUNTER_A> CONCAT(LIBRARY_NAME,COUNTER_B) = { 0,0 };
+
+
+
+template <>
+static inline bool ConvertToCpp<float>(SquirrelScript script, float* valOut, int a)
+{
+	return true;
+}
+
+template <>
+static inline bool ConvertToCpp<int>(SquirrelScript script, int* valOut, int a)
+{
+	return true;
+}
+
+template <>
+static inline bool ConvertToCpp<char*>(SquirrelScript script, char** valOut, int a)
+{
+	return true;
+}
+
+template <>
+static inline bool ConvertToCpp<bool>(SquirrelScript script, bool* valOut, int a)
+{
+	return true;
+}
 
 
 #endif

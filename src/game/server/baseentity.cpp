@@ -81,8 +81,38 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-constexpr ListOfStuff<1> CBaseEntityBindings0x0000 = { 0,0 };
+extern ISquirrel* g_pSquirrel;
+
+template <>
+static inline bool ConvertToCpp<CBaseEntity*>(SquirrelScript script, CBaseEntity** valOut, int a)
+{
+	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id());
+	return true;
+}
+
+template <>
+static inline bool ConvertToCpp<QAngle*>(SquirrelScript script, QAngle** valOut, int a)
+{
+	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<QAngle*>::id());
+	return true;
+}
+
+template <>
+static inline bool ConvertToCpp<Vector*>(SquirrelScript script, Vector** valOut, int a)
+{
+	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<Vector*>::id());
+	return true;
+}
+
+template <>
+static inline bool ConvertToCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t** valOut, int a)
+{
+	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<matrix3x4_t*>::id());
+	return true;
+}
+
 #define LIBRARY_NAME CBaseEntityBindings
+STARTLIBRARY
 
 
 extern bool g_bTestMoveTypeStepSimulation;
@@ -763,7 +793,8 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_flCreateTime = 0.0f;
 
 	m_pEvent = NULL;
-
+	sqinstance.unused1 = 0;
+	sqinstance.unused2 = 0;
 
 }
 
@@ -3342,7 +3373,9 @@ bool CBaseEntity::VPhysicsIsFlesh( void )
 	return false;
 }
 
-bool CBaseEntity::Intersects( CBaseEntity *pOther )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (bool,CBaseEntity,Intersects,( CBaseEntity *pOther )) 
+#include "squirrel/AddToBindings.h"
 {
 	if ( !edict() || !pOther->edict() )
 		return false;
@@ -3665,8 +3698,9 @@ bool CBaseEntity::IsInWorld( void ) const
 	return true;
 }
 
-
-bool CBaseEntity::IsViewable( void )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (bool,CBaseEntity,IsViewable,( void ))
+#include "squirrel/AddToBindings.h"
 {
 	if ( IsEffectActive( EF_NODRAW ) )
 	{
@@ -5002,7 +5036,9 @@ bool CBaseEntity::IsInTeam( CTeam *pTeam ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-int CBaseEntity::GetTeamNumber( void ) const
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (int,CBaseEntity,GetTeamNumber,( void ) const)
+#include "squirrel/AddToBindings.h"
 {
 	return m_iTeamNum;
 }
@@ -5995,7 +6031,7 @@ void CC_Find_Ent_Index( const CCommand& args )
 }
 static ConCommand find_ent_index("find_ent_index", CC_Find_Ent_Index, "Display data for entity matching specified index.\nFormat: find_ent_index <index>\n", FCVAR_CHEAT);
 
-void DumpEntity( CBaseEntity *ent )
+void DumpEntity(CBaseEntity* ent)
 	{
 			for ( datamap_t *dmap = ent->GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
 			{
@@ -6588,7 +6624,9 @@ void CBaseEntity::CalcAbsoluteAngularVelocity()
 //-----------------------------------------------------------------------------
 // Computes the abs position of a point specified in local space
 //-----------------------------------------------------------------------------
-void CBaseEntity::ComputeAbsPosition( const Vector &vecLocalPosition, Vector *pAbsPosition )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,ComputeAbsPosition,( const Vector &vecLocalPosition, Vector *pAbsPosition ))
+#include "squirrel/AddToBindings.h"
 {
 	CBaseEntity *pMoveParent = GetMoveParent();
 	if ( !pMoveParent )
@@ -6605,7 +6643,9 @@ void CBaseEntity::ComputeAbsPosition( const Vector &vecLocalPosition, Vector *pA
 //-----------------------------------------------------------------------------
 // Computes the abs position of a point specified in local space
 //-----------------------------------------------------------------------------
-void CBaseEntity::ComputeAbsDirection( const Vector &vecLocalDirection, Vector *pAbsDirection )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,ComputeAbsDirection,( const Vector &vecLocalDirection, Vector *pAbsDirection ))
+#include "squirrel/AddToBindings.h"
 {
 	CBaseEntity *pMoveParent = GetMoveParent();
 	if ( !pMoveParent )
@@ -6743,7 +6783,9 @@ void CBaseEntity::SetAbsAngles( const QAngle& absAngles )
 	}
 }
 
-void CBaseEntity::SetAbsVelocity( const Vector &vecAbsVelocity )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetAbsVelocity,( const Vector &vecAbsVelocity ))
+#include "squirrel/AddToBindings.h"
 {
 	if ( m_vecAbsVelocity == vecAbsVelocity )
 		return;
@@ -6821,7 +6863,9 @@ void CBaseEntity::SetAbsAngularVelocity( const QAngle &vecAbsAngVelocity )
 //-----------------------------------------------------------------------------
 // Methods that modify local physics state, and let us know to compute abs state later
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetLocalOrigin( const Vector& origin )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetLocalOrigin,( const Vector& origin ))
+#include "squirrel/AddToBindings.h"
 {
 	// Safety check against NaN's or really huge numbers
 	if ( !IsEntityPositionReasonable( origin ) )
@@ -6854,7 +6898,9 @@ void CBaseEntity::SetLocalOrigin( const Vector& origin )
 	}
 }
 
-void CBaseEntity::SetLocalAngles( const QAngle& angles )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetLocalAngles,( const QAngle& angles ))
+#include "squirrel/AddToBindings.h"
 {
 	// NOTE: The angle normalize is a little expensive, but we can save
 	// a bunch of time in interpolation if we don't have to invalidate everything
@@ -6883,7 +6929,9 @@ void CBaseEntity::SetLocalAngles( const QAngle& angles )
 	}
 }
 
-void CBaseEntity::SetLocalVelocity( const Vector &inVecVelocity )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetLocalVelocity,( const Vector &inVecVelocity ))
+#include "squirrel/AddToBindings.h"
 {
 	Vector vecVelocity = inVecVelocity;
 
@@ -6912,7 +6960,9 @@ void CBaseEntity::SetLocalVelocity( const Vector &inVecVelocity )
 	}
 }
 
-void CBaseEntity::SetLocalAngularVelocity( const QAngle &vecAngVelocity )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetLocalAngularVelocity,( const QAngle &vecAngVelocity ))
+#include "squirrel/AddToBindings.h"
 {
 	// Safety check against NaN's or really huge numbers
 	if ( !IsEntityQAngleVelReasonable( vecAngVelocity ) )
@@ -6952,7 +7002,9 @@ const Vector &CBaseEntity::ScriptGetLocalAngularVelocity( void )
 //-----------------------------------------------------------------------------
 // Sets the local position from a transform
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetLocalTransform( const matrix3x4_t &localTransform )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetLocalTransform,( const matrix3x4_t &localTransform ))
+#include "squirrel/AddToBindings.h"
 {
 	// FIXME: Should angles go away? Should we just use transforms?
 	Vector vecLocalOrigin;
@@ -6966,7 +7018,9 @@ void CBaseEntity::SetLocalTransform( const matrix3x4_t &localTransform )
 //-----------------------------------------------------------------------------
 // Adjust the number of cell bits
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetCellBits( int cellbits )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,SetCellBits,( int cellbits ))
+#include "squirrel/AddToBindings.h"
 {
 	m_cellbits = cellbits;
 	m_cellwidth = ( 1 << cellbits );
@@ -6976,7 +7030,9 @@ void CBaseEntity::SetCellBits( int cellbits )
 //-----------------------------------------------------------------------------
 // Called when the origin changes and recomputes cell
 //-----------------------------------------------------------------------------
-void CBaseEntity::UpdateCell()
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,UpdateCell,())
+#include "squirrel/AddToBindings.h"
 {
 	register int const cellwidth = m_cellwidth; // Load it into a register
 
@@ -6997,7 +7053,9 @@ void CBaseEntity::UpdateCell()
 //-----------------------------------------------------------------------------
 // Is the entity floating?
 //-----------------------------------------------------------------------------
-bool CBaseEntity::IsFloating()
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (bool,CBaseEntity,IsFloating,())
+#include "squirrel/AddToBindings.h"
 {
 	if ( !IsEFlagSet(EFL_TOUCHING_FLUID) )
 		return false;
@@ -7069,7 +7127,9 @@ void CBaseEntity::SetPredictionEligible( bool canpredict )
 // These could be virtual, but only the player is overriding them
 // NOTE: If you make any of these virtual, remove this implementation!!!
 //-----------------------------------------------------------------------------
-void CBaseEntity::AddPoints( int score, bool bAllowNegativeScore )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,AddPoints,( int score, bool bAllowNegativeScore ))
+#include "squirrel/AddToBindings.h"
 {
 	CBasePlayer *pPlayer = ToBasePlayer(this);
 	if ( pPlayer )
@@ -7078,7 +7138,9 @@ void CBaseEntity::AddPoints( int score, bool bAllowNegativeScore )
 	}
 }
 
-void CBaseEntity::AddPointsToTeam( int score, bool bAllowNegativeScore )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,AddPointsToTeam,( int score, bool bAllowNegativeScore ))
+#include "squirrel/AddToBindings.h"
 {
 	CBasePlayer *pPlayer = ToBasePlayer(this);
 	if ( pPlayer )
@@ -7087,7 +7149,10 @@ void CBaseEntity::AddPointsToTeam( int score, bool bAllowNegativeScore )
 	}
 }
 
-void CBaseEntity::ViewPunch( const QAngle &angleOffset )
+
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,ViewPunch,( const QAngle &angleOffset ))
+#include "squirrel/AddToBindings.h"
 {
 	CBasePlayer *pPlayer = ToBasePlayer(this);
 	if ( pPlayer )
@@ -7096,7 +7161,9 @@ void CBaseEntity::ViewPunch( const QAngle &angleOffset )
 	}
 }
 
-void CBaseEntity::VelocityPunch( const Vector &vecForce )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,VelocityPunch,( const Vector &vecForce ))
+#include "squirrel/AddToBindings.h"
 {
 	CBasePlayer *pPlayer = ToBasePlayer(this);
 	if ( pPlayer )
@@ -7110,7 +7177,9 @@ void CBaseEntity::VelocityPunch( const Vector &vecForce )
 //-----------------------------------------------------------------------------
 // Purpose: Tell clients to remove all decals from this entity
 //-----------------------------------------------------------------------------
-void CBaseEntity::RemoveAllDecals( void )
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,RemoveAllDecals,( void ))
+#include "squirrel/AddToBindings.h"
 {
 	EntityMessageBegin( this );
 		WRITE_BYTE( BASEENTITY_MSG_REMOVE_DECALS );
@@ -8832,7 +8901,7 @@ static SquirrelClassDecl entc[] = { "CBaseEntity", CONCAT(LIBRARY_NAME, COUNTER_
 
 "",nullptr,nullptr };
 
-extern ISquirrel* g_pSquirrel;
+
 int SQ_CreateEntityByName(SquirrelScript script)
 {
 	const char* name;
@@ -8847,14 +8916,42 @@ int SQ_CreateEntityByName(SquirrelScript script)
 		return 0;
 	}
 	SquirrelValue obj = g_pSquirrel->InstantiateClass(script, SQCBaseEntity);
+	ent->sqinstance = obj.val_obj;
 	g_pSquirrel->SetObjectUserdata(script, obj.val_obj, ent, TypeIdentifier<CBaseEntity*>::id());
 	g_pSquirrel->PushValue(script, obj);
 	return 1;
 }
 
+int SQ_EntityByIndex(SquirrelScript script)
+{
+	int id;
+	if (!g_pSquirrel->GetArgs(script, "i", &id))
+	{
+		return 0;
+	}
+
+	CBaseEntity* ent = UTIL_EntityByIndex(id);
+	if (!ent)
+	{
+		return 0;
+	}
+	if (ent->sqinstance.unused1 == 0)
+	{
+		ent->sqinstance = g_pSquirrel->InstantiateClass(script, SQCBaseEntity).val_obj;
+		g_pSquirrel->SetObjectUserdata(script, ent->sqinstance, ent, TypeIdentifier<CBaseEntity*>::id());
+	}
+	SquirrelValue val;
+	val.val_obj = ent->sqinstance;
+	val.type = SQUIRREL_OBJECT;
+	g_pSquirrel->PushValue(script, val);
+
+	return 1;
+}
 
 void RegisterCBaseEntitySquirrelFunctions(SquirrelScript script)
 {
 	g_pSquirrel->RegisterClasses(script,entc);
 	g_pSquirrel->AddFunction(script, "CreateEntityByName", SQ_CreateEntityByName);
+	g_pSquirrel->AddFunction(script, "EntityByIndex", SQ_EntityByIndex);
 }
+

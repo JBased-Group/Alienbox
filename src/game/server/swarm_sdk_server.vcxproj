@@ -1442,6 +1442,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\public\appframework\IAppSystem.h" />
+    <ClInclude Include="..\..\public\arraystack.h" />
     <ClInclude Include="..\..\public\basehandle.h" />
     <ClInclude Include="..\..\public\bittools.h" />
     <ClInclude Include="..\..\public\bitvec.h" />
@@ -1537,6 +1538,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd serve
     <ClInclude Include="..\..\public\soundchars.h" />
     <ClInclude Include="..\..\public\SoundEmitterSystem\isoundemittersystembase.h" />
     <ClInclude Include="..\..\public\soundflags.h" />
+    <ClInclude Include="..\..\public\squirrel\AddToBindings.h" />
     <ClInclude Include="..\..\public\stdstring.h" />
     <ClInclude Include="..\..\public\steam\isteamclient.h" />
     <ClInclude Include="..\..\public\steam\isteamgameserver.h" />

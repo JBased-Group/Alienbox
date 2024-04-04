@@ -1029,12 +1029,46 @@ int SQ_LinkEntityToClass(SquirrelScript script)
 	return 0;
 }
 
+#define LIBRARY_NAME VectorBindings
+constexpr ListOfStuff<1> VectorBindings0x0000 = { 0,0 };
+SquirrelObject SQVector;
 
+int SQ_Vector(SquirrelScript script)
+{
+	float x, y, z;
+	if (!g_pSquirrel->GetArgs(script, "fff", &x, &y, &z))
+	{
+		return 0;
+	}
+	SquirrelValue v = g_pSquirrel->InstantiateClass(script, SQVector);
+	g_pSquirrel->SetObjectUserdata(script, v.val_obj, new Vector(x, y, z), TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushValue(script, v);
+	return 1;
+}
+
+class DummyVector
+{
+public:
+	virtual void Dummy();
+};
+
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,DummyVector,Dummy,())
+#include "squirrel/AddToBindings.h"
+{
+
+}
+
+static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector,
+
+"",nullptr,nullptr };
 
 extern void RegisterCBaseCombatWeaponSquirrelFunctions(SquirrelScript script);
 
 void RegisterAllSquirrel(SquirrelScript script)
 {
+	g_pSquirrel->AddFunction(script, "CreateVector", SQ_Vector);
+	g_pSquirrel->RegisterClasses(script, entc);
 	RegisterCBaseEntitySquirrelFunctions(script);
 	RegisterCBaseCombatWeaponSquirrelFunctions(script);
 }
@@ -1120,10 +1154,10 @@ void LoadFilesInDirectory(const char* modname, const char* folder, const char* f
 	}
 }
 
+
 // This is called when a new game is started. (restart, map)
 bool CServerGameDLL::GameInit( void )
 {
-	//t();
 	ResetGlobalState();
 	engine->ServerCommand( "exec game.cfg\n" );
 	engine->ServerExecute( );
@@ -1587,6 +1621,11 @@ void CServerGameDLL::GameFrame( bool simulating )
 
 	// Any entities that detect network state changes on a timer do it here.
 	g_NetworkPropertyEventMgr.FireEvents();
+
+	for (int i = 0; i < squirrelscripts.Count(); i++)
+	{
+		g_pSquirrel->CallFunction(squirrelscripts[i], "OnGameFrame", "");
+	}
 
 	gpGlobals->frametime = oldframetime;
 }

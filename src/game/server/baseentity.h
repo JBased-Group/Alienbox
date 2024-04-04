@@ -1911,6 +1911,7 @@ public:
 
 public:
 	virtual bool IsInhabitableNPC() const { return false; }
+	SquirrelObject sqinstance;
 };
 
 // Send tables exposed in this module.

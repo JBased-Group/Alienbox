@@ -6,14 +6,23 @@ class Hi extends CBaseEntity
 	}
 }
 
+class Bruh extends Vector
+{
+	constructor()
+	{
+	
+	}
+}
+
+
 LinkEntityToClass("my_squirrel_ent",Hi);
 
-function OnLevelInit()
+function OnGameFrame()
 {
-	local HELP = CreateEntityByName("my_squirrel_ent");
-	HELP.SetFadeDistance(HELP.GetReceivedDamageScale(HELP),100.0);
-	HELP.DrawBBoxOverlay(10.0);
-	HELP.EntityText(0,"Hello from squirrel", 10.0, 255,255, 127, 255);
-	HELP.DrawAbsBoxOverlay();
-	
+	local A = EntityByIndex(1);
+	local B = EntityByIndex(19);
+	if(A != null && B != null && A.Intersects(B))
+	{
+		A.VelocityPunch(CreateVector(0.0,0.0,1000.0));
+	}
 }
