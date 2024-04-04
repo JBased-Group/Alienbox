@@ -973,7 +973,7 @@ public:
 		{
 			return 0;
 		}
-		CSquirrelEntity* newEnt = new CSquirrelEntity(sqobj.val_obj); // this is the only place 'new' should be used!
+		CSquirrelEntity* newEnt = new CSquirrelEntity(sqobj.val_obj,thescript); // this is the only place 'new' should be used!
 		g_pSquirrel->SetObjectUserdata(thescript, sqobj.val_obj, newEnt, TypeIdentifier<CBaseEntity*>::id());
 		newEnt->PostConstructor(pClassName);
 		return newEnt->NetworkProp();
@@ -1059,7 +1059,7 @@ public:
 
 }
 
-static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector,
+static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector, TypeIdentifier<Vector*>::id(),
 
 "",nullptr,nullptr };
 

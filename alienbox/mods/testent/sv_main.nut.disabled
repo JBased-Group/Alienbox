@@ -6,15 +6,6 @@ class Hi extends CBaseEntity
 	}
 }
 
-class Bruh extends Vector
-{
-	constructor()
-	{
-	
-	}
-}
-
-
 LinkEntityToClass("my_squirrel_ent",Hi);
 
 function OnGameFrame()

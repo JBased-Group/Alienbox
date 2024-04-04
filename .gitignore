@@ -65,3 +65,6 @@ src/utils/*/Release/
 /src/dx9sdk/lib
 /src/squirrel/Debug
 /src/squirrel/Release
+/src/Release
+/src/Release
+launcher.exe

@@ -86,29 +86,25 @@ extern ISquirrel* g_pSquirrel;
 template <>
 static inline bool ConvertToCpp<CBaseEntity*>(SquirrelScript script, CBaseEntity** valOut, int a)
 {
-	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id());
-	return true;
+	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id());
 }
 
 template <>
 static inline bool ConvertToCpp<QAngle*>(SquirrelScript script, QAngle** valOut, int a)
 {
-	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<QAngle*>::id());
-	return true;
+	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<QAngle*>::id());
 }
 
 template <>
 static inline bool ConvertToCpp<Vector*>(SquirrelScript script, Vector** valOut, int a)
 {
-	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<Vector*>::id());
-	return true;
+	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<Vector*>::id());
 }
 
 template <>
 static inline bool ConvertToCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t** valOut, int a)
 {
-	g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<matrix3x4_t*>::id());
-	return true;
+	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<matrix3x4_t*>::id());
 }
 
 #define LIBRARY_NAME CBaseEntityBindings
@@ -8897,9 +8893,10 @@ static ConCommand ent_orient("ent_orient", CC_Ent_Orient, "Orient the specified 
 
 SquirrelObject SQCBaseEntity;
 
-static SquirrelClassDecl entc[] = { "CBaseEntity", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseEntity,
 
-"",nullptr,nullptr };
+static SquirrelClassDecl entc[] = { "CBaseEntity", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseEntity, TypeIdentifier<CBaseEntity*>::id(),
+
+"",nullptr,nullptr, nullptr };
 
 
 int SQ_CreateEntityByName(SquirrelScript script)

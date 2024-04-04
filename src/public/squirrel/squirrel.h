@@ -72,6 +72,7 @@ struct SquirrelClassDecl
 	const char* name;
 	const SquirrelFunctionDecl* funcs;
 	SquirrelObject* clsobj;
+	const int* typetag;
 };
 
 typedef void (*SquirrelRegisterFunction)(SquirrelScript);
@@ -95,15 +96,15 @@ public:
 	virtual SquirrelObject CreateClass(SquirrelScript script) = 0;
 	virtual void SetObjectUserdata(SquirrelScript script, SquirrelObject obj, void* ptr, const int* typetag) = 0;
 	virtual void* GetObjectUserdata(SquirrelScript script, SquirrelObject obj) = 0;
-	virtual void GetStackInt(SquirrelScript script, int i, int* val) = 0;
-	virtual void GetStackFloat(SquirrelScript script, int i, float* val) = 0;
-	virtual void GetStackString(SquirrelScript script, int i, const char** val) = 0;
-	virtual void GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag) = 0;
+	virtual bool GetStackInt(SquirrelScript script, int i, int* val) = 0;
+	virtual bool GetStackFloat(SquirrelScript script, int i, float* val) = 0;
+	virtual bool GetStackString(SquirrelScript script, int i, const char** val) = 0;
+	virtual bool GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag) = 0;
 	virtual void PushInt(SquirrelScript script, int val) = 0;
 	virtual void PushFloat(SquirrelScript script, float val) = 0;
 	virtual void PushString(SquirrelScript script, const char* val) = 0;
 	virtual void PushPtr(SquirrelScript script, void* val, const int* typetag) = 0;
-	virtual void GetStackObjectUserdata(SquirrelScript script, void** ptr) = 0;
+	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr) = 0;
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes) = 0;
 };
 

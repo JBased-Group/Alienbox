@@ -2792,7 +2792,7 @@ int CBaseCombatWeapon::LookupAttachment( const char *pAttachmentName )
 #ifndef CLIENT_DLL
 SquirrelObject SQCBaseCombatWeapon;
 
-static SquirrelClassDecl entc[] = { "CBaseCombatWeapon", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseCombatWeapon,
+static SquirrelClassDecl entc[] = { "CBaseCombatWeapon", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseCombatWeapon, TypeIdentifier<CBaseCombatWeapon*>::id(),
 
 "",nullptr,nullptr };
 

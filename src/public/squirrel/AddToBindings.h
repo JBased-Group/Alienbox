@@ -9,19 +9,23 @@ if constexpr (count > a) \
 { \
 	if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[a] == 'i') \
 	{ \
-		g_pSquirrel->GetStackInt(script, a + 1, &argi[a - 1].v_i); \
+		if(!g_pSquirrel->GetStackInt(script, a + 1, &argi[a - 1].v_i)) \
+			return 0; \
 	} \
 	else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[a] == 'f') \
 	{ \
-		g_pSquirrel->GetStackFloat(script, a + 1, &argi[a - 1].v_f); \
+		if(!g_pSquirrel->GetStackFloat(script, a + 1, &argi[a - 1].v_f)) \
+			return 0; \
 	} \
 	else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[a] == 's') \
 	{ \
-		g_pSquirrel->GetStackString(script, a + 1, &argi[a - 1].v_s); \
+		if(!g_pSquirrel->GetStackString(script, a + 1, &argi[a - 1].v_s)) \
+			return 0; \
 	} \
 	else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[a] == 'p') \
 	{ \
-		((GenericConverterToCpp)(((void* (*)())CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG).ConvertCpp[a])()))(script,&argi[a-1].v_p, a + 1); \
+		if(!((GenericConverterToCpp)(((void* (*)())CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG).ConvertCpp[a])()))(script,&argi[a-1].v_p, a + 1)) \
+			return 0; \
 	} \
 }
 

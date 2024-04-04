@@ -25,15 +25,15 @@ public:
 	virtual SquirrelObject CreateClass(SquirrelScript script);
 	virtual void SetObjectUserdata(SquirrelScript script, SquirrelObject obj, void* ptr, const int* typetag);
 	virtual void* GetObjectUserdata(SquirrelScript script, SquirrelObject obj);
-	virtual void GetStackInt(SquirrelScript script, int i, int* val);
-	virtual void GetStackFloat(SquirrelScript script, int i, float* val);
-	virtual void GetStackString(SquirrelScript script, int i, const char** val);
-	virtual void GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag);
+	virtual bool GetStackInt(SquirrelScript script, int i, int* val);
+	virtual bool GetStackFloat(SquirrelScript script, int i, float* val);
+	virtual bool GetStackString(SquirrelScript script, int i, const char** val);
+	virtual bool GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag);
 	virtual void PushInt(SquirrelScript script, int val);
 	virtual void PushFloat(SquirrelScript script, float val);
 	virtual void PushString(SquirrelScript script, const char* val);
 	virtual void PushPtr(SquirrelScript script, void* val, const int* typetag);
-	virtual void GetStackObjectUserdata(SquirrelScript script, void** ptr);
+	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr);
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes);
 };
 
@@ -60,24 +60,24 @@ void* CSquirrel::GetObjectUserdata(SquirrelScript script, SquirrelObject obj)
 	return ptr;
 }
 
-void CSquirrel::GetStackInt(SquirrelScript script, int i, int* val)
+bool CSquirrel::GetStackInt(SquirrelScript script, int i, int* val)
 {
-	sq_getinteger((HSQUIRRELVM)script, i, val);
+	return SQ_SUCCEEDED(sq_getinteger((HSQUIRRELVM)script, i, val));
 }
 
-void CSquirrel::GetStackFloat(SquirrelScript script, int i, float* val)
+bool CSquirrel::GetStackFloat(SquirrelScript script, int i, float* val)
 {
-	sq_getfloat((HSQUIRRELVM)script, i, val);
+	return SQ_SUCCEEDED(sq_getfloat((HSQUIRRELVM)script, i, val));
 }
 
-void CSquirrel::GetStackString(SquirrelScript script, int i, const char** val)
+bool CSquirrel::GetStackString(SquirrelScript script, int i, const char** val)
 {
-	sq_getstring((HSQUIRRELVM)script, i, val);
+	return SQ_SUCCEEDED(sq_getstring((HSQUIRRELVM)script, i, val));
 }
 
-void CSquirrel::GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag)
+bool CSquirrel::GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag)
 {
-	sq_getinstanceup((HSQUIRRELVM)script, i, val, (void*)typetag, SQFalse);
+	return SQ_SUCCEEDED(sq_getinstanceup((HSQUIRRELVM)script, i, val, (void*)typetag, SQFalse));
 }
 
 void CSquirrel::PushInt(SquirrelScript script, int val)
@@ -100,9 +100,9 @@ void CSquirrel::PushPtr(SquirrelScript script, void* val, const int* typetag)
 	sq_pushuserpointer((HSQUIRRELVM)script, val);
 }
 
-void CSquirrel::GetStackObjectUserdata(SquirrelScript script, void** ptr)
+bool CSquirrel::GetStackObjectUserdata(SquirrelScript script, void** ptr)
 {
-	sq_getinstanceup((HSQUIRRELVM)script, 1, ptr, 0, SQFalse);
+	return SQ_SUCCEEDED(sq_getinstanceup((HSQUIRRELVM)script, 1, ptr, 0, SQFalse));
 }
 
 void CSquirrel::RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes)
@@ -120,6 +120,7 @@ void CSquirrel::RegisterClasses(SquirrelScript script, SquirrelClassDecl* classe
 			sq_newslot(v, -3, false);
 			classes->funcs++;
 		}
+		sq_settypetag(v, -1, (void*)classes->typetag);
 		sq_newslot(v, -3, false);
 		classes++;
 	}
