@@ -232,6 +232,8 @@ extern ISaveRestoreOps *eventFuncs;
 #define FTYPEDESC_VIEW_OWN_TEAM			0x4000		// Only show this data if the player is on the same team as the local player
 #define FTYPEDESC_VIEW_NEVER			0x8000		// Never show this field to anyone, even the local player (unusual)
 
+#define FTYPEDESC_SQUIRREL             0x10000  // Had to make the typedescription_t flags short into an unsigned int. Only for Squirrel entities
+
 #define TD_MSECTOLERANCE		0.001f		// This is a FIELD_FLOAT and should only be checked to be within 0.001 of the networked info
 
 struct typedescription_t;
@@ -271,7 +273,7 @@ struct typedescription_t
 	const char			*fieldName;
 	int					fieldOffset; // Local offset value
 	unsigned short		fieldSize;
-	short				flags;
+	unsigned int		flags;
 	// the name of the variable in the map/fgd data, or the name of the action
 	const char			*externalName;	
 	// pointer to the function set for save/restoring of custom data types

@@ -35,6 +35,9 @@ public:
 	virtual void PushPtr(SquirrelScript script, void* val, const int* typetag);
 	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr);
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes);
+	virtual bool SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype);
+	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var);
+	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap);
 };
 
 
@@ -125,6 +128,115 @@ void CSquirrel::RegisterClasses(SquirrelScript script, SquirrelClassDecl* classe
 		classes++;
 	}
 }
+
+bool CSquirrel::SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	HSQOBJECT inst = *(HSQOBJECT*)&obj;
+	
+	sq_pushobject(v, inst);
+	sq_pushstring(v, name, -1);
+	SQRESULT succ = sq_get(v, -2);
+	switch (ftype)
+	{
+	case FIELD_INTEGER:
+		sq_getinteger(v, -1, (int*)var);
+	case FIELD_FLOAT:
+		sq_getfloat(v, -1, (float*)var);
+	}
+	sq_pop(v, 1);
+	return SQ_SUCCEEDED(succ);
+}
+
+bool CSquirrel::GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	HSQOBJECT inst = *(HSQOBJECT*)&obj;
+
+	sq_pushobject(v, inst);
+	sq_pushstring(v, name, -1);
+	switch (var->FieldType())
+	{
+	case FIELD_INTEGER:
+		sq_pushinteger(v, var->Int());
+		break;
+	case FIELD_FLOAT:
+		sq_pushfloat(v, var->Float());
+		break;
+	}
+	SQRESULT succ = sq_set(v, -3);
+	sq_pop(v, 1);
+	return SQ_SUCCEEDED(succ);
+}
+
+datamap_t* CSquirrel::GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap )
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	HSQOBJECT inst = *(HSQOBJECT*)&obj;
+	datamap_t* dm = new datamap_t();
+	CUtlVector<typedescription_t> typedescs;
+	dm->dataClassName = "CSquirrelEntity";
+	dm->baseMap = basemap;
+	sq_pushobject(v, inst);
+	sq_pushnull(v);
+	while (SQ_SUCCEEDED(sq_next(v, -2)))
+	{
+		typedescription_t hi = {};
+		bool hasdatadesc = false;
+		hi.flags = FTYPEDESC_SQUIRREL;
+		sq_pop(v, 1); // pop value
+
+		if (SQ_FAILED(sq_getattributes(v, -3)))
+		{
+			sq_pop(v, 1);
+			continue;
+		}
+		if(sq_gettype(v,-1) != OT_TABLE)
+		{
+			sq_pop(v, 1);
+			continue;
+		}
+		sq_pushnull(v);
+		while (SQ_SUCCEEDED(sq_next(v, -2)))
+		{
+			const char* key;
+			sq_getstring(v, -2, &key);
+			if (!V_strcmp(key, "datadesc"))
+			{
+				hasdatadesc = true;
+				sq_getstring(v, -1, &hi.fieldName);
+				hi.fieldType = FIELD_INTEGER;
+				hi.fieldOffset = 0;
+				hi.fieldSize = 1;
+				hi.fieldSizeInBytes = 4;
+			}
+			else if (!V_strcmp(key, "externalname"))
+			{
+				sq_getstring(v, -1, &hi.externalName);
+			}
+			else if (!V_strcmp(key, "flags"))
+			{
+				int newflags = 0;
+				sq_getinteger(v, -1, &newflags);
+				hi.flags |= newflags;
+			}
+			sq_pop(v, 2);
+		}
+		sq_pop(v, 1); //pop null
+		if(hasdatadesc)
+		{
+			typedescs.AddToTail(hi);
+		}
+	}
+	dm->dataNumFields = typedescs.Count();
+	dm->dataDesc = (typedescription_t*)MemAlloc_Alloc(sizeof(typedescription_t) * dm->dataNumFields);
+	V_memcpy(dm->dataDesc, typedescs.Base(), sizeof(typedescription_t) * dm->dataNumFields);
+	return dm;
+
+}
+
+
+
 
 SquirrelValue CSquirrel::InstantiateClass(SquirrelScript script, SquirrelObject cls)
 {

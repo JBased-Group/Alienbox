@@ -128,6 +128,20 @@ public:
         }
         return false;
     }
+    bool GetMemberIdx(const SQObjectPtr& key, int& idx)
+    {
+        SQObjectPtr val;
+        if (!_class->_members->Get(key, val)) 
+        {
+            return false;
+        }
+        if (!_isfield(val)) 
+        {
+            return false;
+        }
+        idx = _member_idx(val);
+        return true;
+    }
     bool Set(const SQObjectPtr &key,const SQObjectPtr &val) {
         SQObjectPtr idx;
         if(_class->_members->Get(key,idx) && _isfield(idx)) {
@@ -135,6 +149,15 @@ public:
             return true;
         }
         return false;
+    }
+    bool SetMemberIdx(const SQObjectPtr& val, int idx)
+    {
+        if (!_isfield(_values[idx]))
+        {
+            return false;
+        }
+        _values[idx] = val;
+        return true;
     }
     void Release() {
         _uiRef++;

@@ -2,6 +2,9 @@
 #define SQUIRREL_H
 #define INTERFACESQUIRREL_VERSION				"ABoxSquirrel001"
 #include "counter.h"
+#include "string_t.h"
+#include "datamap.h"
+#include "../game/server/variant_t.h"
 typedef void* SquirrelScript;
 
 enum SquirrelType
@@ -106,6 +109,9 @@ public:
 	virtual void PushPtr(SquirrelScript script, void* val, const int* typetag) = 0;
 	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr) = 0;
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes) = 0;
+	virtual bool SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype) = 0;
+	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var) = 0;
+	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap) = 0;
 };
 
 

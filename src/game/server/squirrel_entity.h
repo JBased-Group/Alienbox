@@ -11,10 +11,13 @@ class CSquirrelEntity : public CBaseEntity
 public:
 	DECLARE_CLASS(CSquirrelEntity, CBaseEntity);
 	//DECLARE_SERVERCLASS();
+	DECLARE_DATADESC();
+
 	CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript);
 	virtual void Think();
 	SquirrelObject obj;
 	SquirrelScript script;
+	datamap_t* m_dataMap;
 };
 
 #endif

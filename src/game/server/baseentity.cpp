@@ -77,7 +77,7 @@
 #include "asw_player.h"
 #include "rd_cause_of_death.h"
 #endif
-
+#include "squirrel_entity.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -3354,7 +3354,8 @@ int CBaseEntity::VPhysicsGetObjectList( IPhysicsObject **pList, int listMax )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool CBaseEntity::VPhysicsIsFlesh( void )
+#define SQ_FUNCTION() (bool,CBaseEntity,VPhysicsIsFlesh,( void ))
+#include "squirrel/AddToBindings.h"
 {
 	IPhysicsObject *pList[VPHYSICS_MAX_OBJECT_LIST_COUNT];
 	int count = VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
@@ -4622,7 +4623,14 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 					else if ( dmap->dataDesc[i].flags & FTYPEDESC_KEY )
 					{
 						// set the value directly
-						Value.SetOther( ((char*)this) + dmap->dataDesc[i].fieldOffset);
+						if (dmap->dataDesc[i].flags & FTYPEDESC_SQUIRREL)
+						{
+							g_pSquirrel->GetObjectVariant(((CSquirrelEntity*)this)->script, ((CSquirrelEntity*)this)->obj, (const char*)dmap->dataDesc[i].fieldOffset, &Value);
+						}
+						else
+						{
+							Value.SetOther(((char*)this) + dmap->dataDesc[i].fieldOffset);
+						}
 					
 						// TODO: if this becomes evil and causes too many full entity updates, then we should make
 						// a macro like this:
@@ -4705,10 +4713,20 @@ bool CBaseEntity::ReadKeyField( const char *varName, variant_t *var )
 		{
 			if ( dmap->dataDesc[i].flags & (FTYPEDESC_OUTPUT | FTYPEDESC_KEY) )
 			{
-				if ( !Q_stricmp(dmap->dataDesc[i].externalName, varName) )
+				if (!Q_stricmp(dmap->dataDesc[i].externalName, varName))
 				{
-					var->Set( dmap->dataDesc[i].fieldType, ((char*)this) + dmap->dataDesc[i].fieldOffset);
-					return true;
+					if (dmap->dataDesc[i].flags & FTYPEDESC_SQUIRREL)
+					{
+						g_pSquirrel->SetObjectVariant(((CSquirrelEntity*)this)->script,((CSquirrelEntity*)this)->obj, (const char*)dmap->dataDesc[i].fieldOffset,var, dmap->dataDesc[i].fieldType);
+						//var->Set(dmap->dataDesc[i].fieldType, (void*)objmember);
+						
+						return true;
+					}
+					else
+					{
+						var->Set(dmap->dataDesc[i].fieldType, ((char*)this) + dmap->dataDesc[i].fieldOffset);
+						return true;
+					}
 				}
 			}
 		}
@@ -4882,7 +4900,9 @@ void CBaseEntity::InputClearParent( inputdata_t &inputdata )
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-void CBaseEntity::GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity)
+#undef SQ_FUNCTION
+#define SQ_FUNCTION() (void,CBaseEntity,GetVelocity,(Vector *vVelocity, AngularImpulse *vAngVelocity))
+#include "squirrel/AddToBindings.h"
 {
 	if (GetMoveType()==MOVETYPE_VPHYSICS && m_pPhysicsObject)
 	{
@@ -6403,6 +6423,18 @@ void CC_Ent_Info( const CCommand& args )
 					if ( dmap->dataDesc[i].flags & FTYPEDESC_INPUT )
 					{
 						ClientPrint( pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs("  input: %s\n", dmap->dataDesc[i].externalName) );
+					}
+				}
+			}
+
+			for (dmap = ent->GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap)
+			{
+				// search through all the actions in the data description, printing out details
+				for (int i = 0; i < dmap->dataNumFields; i++)
+				{
+					if (dmap->dataDesc[i].flags & FTYPEDESC_KEY)
+					{
+						ClientPrint(pPlayer, HUD_PRINTCONSOLE, UTIL_VarArgs("  keyvalue: %s\n", dmap->dataDesc[i].externalName));
 					}
 				}
 			}

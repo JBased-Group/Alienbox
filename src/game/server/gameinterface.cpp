@@ -974,6 +974,7 @@ public:
 			return 0;
 		}
 		CSquirrelEntity* newEnt = new CSquirrelEntity(sqobj.val_obj,thescript); // this is the only place 'new' should be used!
+		newEnt->m_dataMap = g_pSquirrel->GenerateDatamap(thescript, theentity, &CBaseEntity::m_DataMap);
 		g_pSquirrel->SetObjectUserdata(thescript, sqobj.val_obj, newEnt, TypeIdentifier<CBaseEntity*>::id());
 		newEnt->PostConstructor(pClassName);
 		return newEnt->NetworkProp();

@@ -35,8 +35,8 @@ class variant_t
 	CHandle<CBaseEntity> eVal; // this can't be in the union because it has a constructor.
 
 	fieldtype_t fieldType;
-
 public:
+
 
 	// constructor
 	variant_t() : fieldType(FIELD_VOID), iVal(0) {}

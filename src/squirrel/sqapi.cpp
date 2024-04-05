@@ -1045,6 +1045,37 @@ SQRESULT sq_get(HSQUIRRELVM v,SQInteger idx)
     return SQ_ERROR;
 }
 
+SQRESULT sq_getinstancemember(HSQUIRRELVM v, SQInteger idx, SQInteger* memberidx)
+{
+    SQObjectPtr& self = stack_get(v, idx);
+    SQObjectPtr& obj = v->GetUp(-1);
+    if (sq_type(self) != OT_INSTANCE)
+    {
+        return SQ_ERROR;
+    }
+    if (!_instance(self)->GetMemberIdx(obj, *memberidx))
+    {
+        return SQ_ERROR;
+    }
+    return SQ_OK;
+}
+
+SQRESULT sq_setinstancemember(HSQUIRRELVM v, SQInteger idx, SQInteger memberidx)
+{
+    SQObjectPtr& self = stack_get(v, idx);
+    SQObjectPtr& obj = v->GetUp(-1);
+    if (sq_type(self) != OT_INSTANCE)
+    {
+        return SQ_ERROR;
+    }
+    if (!_instance(self)->SetMemberIdx(obj, memberidx))
+    {
+        return SQ_ERROR;
+    }
+    return SQ_OK;
+}
+
+
 SQRESULT sq_rawget(HSQUIRRELVM v,SQInteger idx)
 {
     SQObjectPtr &self=stack_get(v,idx);
