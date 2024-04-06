@@ -963,6 +963,8 @@ public:
 	{
 		theentity = sqent;
 		thescript = script;
+		datamap = g_pSquirrel->GenerateDatamap(thescript, theentity, &CBaseEntity::m_DataMap);;
+		serverclass = new ServerClass("WhjateverReplaceThis", g_pSquirrel->GenerateSendtable(thescript, theentity, CBaseEntity::m_pClassSendTable, (size_t)&((CSquirrelEntity*)0)->obj));
 		EntityFactoryDictionary()->InstallFactory(this, pClassName);
 	}
 
@@ -974,7 +976,8 @@ public:
 			return 0;
 		}
 		CSquirrelEntity* newEnt = new CSquirrelEntity(sqobj.val_obj,thescript); // this is the only place 'new' should be used!
-		newEnt->m_dataMap = g_pSquirrel->GenerateDatamap(thescript, theentity, &CBaseEntity::m_DataMap);
+		newEnt->m_dataMap = datamap;
+		newEnt->m_serverClass = serverclass;
 		g_pSquirrel->SetObjectUserdata(thescript, sqobj.val_obj, newEnt, TypeIdentifier<CBaseEntity*>::id());
 		newEnt->PostConstructor(pClassName);
 		return newEnt->NetworkProp();
@@ -995,6 +998,8 @@ public:
 
 	SquirrelObject theentity;
 	SquirrelScript thescript;
+	ServerClass* serverclass;
+	datamap_t* datamap;
 };
 
 
@@ -1047,22 +1052,10 @@ int SQ_Vector(SquirrelScript script)
 	return 1;
 }
 
-class DummyVector
-{
-public:
-	virtual void Dummy();
-};
-
-#undef SQ_FUNCTION
-#define SQ_FUNCTION() (void,DummyVector,Dummy,())
-#include "squirrel/AddToBindings.h"
-{
-
-}
 
 static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector, TypeIdentifier<Vector*>::id(),
 
-"",nullptr,nullptr };
+"",nullptr,nullptr,nullptr };
 
 extern void RegisterCBaseCombatWeaponSquirrelFunctions(SquirrelScript script);
 
@@ -1118,7 +1111,6 @@ void LoadMod(const char* path)
 		squirrelscripts.AddToTail(script);
 	}
 }
-
 
 void LoadFilesInDirectory(const char* modname, const char* folder, const char* filename)
 {

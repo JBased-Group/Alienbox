@@ -83,15 +83,17 @@
 
 #define SPROP_CHANGES_OFTEN				(1<<18)	// this is an often changed field, moved to head of sendtable so it gets a small index
 
-#define SPROP_NUMFLAGBITS_NETWORKED		19
+#define SPROP_SQUIRREL					(1<<19) // squirrel prop
+
+#define SPROP_NUMFLAGBITS_NETWORKED		20
 
 
 // This is server side only, it's used to mark properties whose SendProxy_* functions encode against gpGlobals->tickcount (the only ones that currently do this are
 //  m_flAnimTime and m_flSimulationTime.  MODs shouldn't need to mess with this probably
-#define SPROP_ENCODED_AGAINST_TICKCOUNT	(1<<19)
+#define SPROP_ENCODED_AGAINST_TICKCOUNT	(1<<20)
 
 // See SPROP_NUMFLAGBITS_NETWORKED for the ones which are networked
-#define SPROP_NUMFLAGBITS				20
+#define SPROP_NUMFLAGBITS				21
 
 // Used by the SendProp and RecvProp functions to disable debug checks on type sizes.
 #define SIZEOF_IGNORE		-1

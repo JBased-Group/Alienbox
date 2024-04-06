@@ -8,6 +8,12 @@ class ExplosiveThing extends CBaseEntity
 	
 	</ datadesc = true, externalname = "explosion_power", flags = 6 />
 	explosionpwr = 10;
+	
+	</ datadesc = true, externalname = "epicstring", flags = 6 />
+	epicstring = "HELLO";
+	
+	</ sendprop = true />
+	testsend = 23;
 }
 
 LinkEntityToClass("my_squirrel_ent",ExplosiveThing);

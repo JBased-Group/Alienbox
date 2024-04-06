@@ -5,6 +5,8 @@
 #include "string_t.h"
 #include "datamap.h"
 #include "../game/server/variant_t.h"
+#include "dt_common.h"
+#include "dt_send.h"
 typedef void* SquirrelScript;
 
 enum SquirrelType
@@ -112,6 +114,7 @@ public:
 	virtual bool SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype) = 0;
 	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var) = 0;
 	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap) = 0;
+	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset) = 0;
 };
 
 
@@ -128,9 +131,6 @@ constexpr bool IsPointer<Type* const> = true;
 
 template <typename Type>
 constexpr bool IsPointer<Type&> = true;
-
-
-
 
 
 
@@ -244,6 +244,7 @@ constexpr ReturnableString<Size> operator +(ReturnableString<Size> Left, void* T
 
 template <typename Type>
 bool ConvertToCpp(SquirrelScript script, Type* valOut, int a);
+
 
 // Thanks https://stackoverflow.com/a/77093313
 template <class C>

@@ -27,7 +27,7 @@ void SendProxy_UInt16ToInt32( const SendProp *pProp, const void *pStruct, const 
 void SendProxy_UInt32ToInt32( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 void SendProxy_UInt64ToInt64( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID);
 
-char *s_ElementNames[MAX_ARRAY_ELEMENTS] =
+const char *s_ElementNames[MAX_ARRAY_ELEMENTS] =
 {
 	"000", "001", "002", "003", "004", "005", "006", "007", "008", "009", 
 	"010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
@@ -741,7 +741,7 @@ SendProp SendPropArray3(
 	{
 		pProps[i] = pArrayProp;	// copy array element property setting
 		pProps[i].SetOffset( i*sizeofVar ); // adjust offset
-		pProps[i].m_pVarName = s_ElementNames[i];	// give unique name
+		pProps[i].m_pVarName = (char*)s_ElementNames[i];	// give unique name
 		pProps[i].m_pParentArrayPropName = pVarName; // For debugging...
 	}
 

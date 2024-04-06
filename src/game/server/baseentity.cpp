@@ -4124,7 +4124,7 @@ CBaseEntity* CBaseEntity::Instance( const CBaseHandle &hEnt )
 	return gEntList.GetBaseEntity( hEnt );
 }
 
-#undef SQ_FUNCTION
+
 #define SQ_FUNCTION() (int,CBaseEntity,GetTransmitState,( void ))
 #include "squirrel/AddToBindings.h"
 {
@@ -4136,7 +4136,6 @@ CBaseEntity* CBaseEntity::Instance( const CBaseHandle &hEnt )
 	return ed->m_fStateFlags;
 }
 
-#undef SQ_FUNCTION
 #define SQ_FUNCTION() (int,CBaseEntity,SetTransmitState,( int nFlag ))
 #include "squirrel/AddToBindings.h"
 {

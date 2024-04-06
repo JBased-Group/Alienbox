@@ -10,7 +10,7 @@ class CSquirrelEntity : public CBaseEntity
 {
 public:
 	DECLARE_CLASS(CSquirrelEntity, CBaseEntity);
-	//DECLARE_SERVERCLASS();
+	DECLARE_SERVERCLASS();
 	DECLARE_DATADESC();
 
 	CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript);
@@ -18,6 +18,7 @@ public:
 	SquirrelObject obj;
 	SquirrelScript script;
 	datamap_t* m_dataMap;
+	ServerClass* m_serverClass;
 };
 
 #endif

@@ -1,5 +1,6 @@
 #include "squirrel.h"
 #include "../public/squirrel/squirrel.h"
+
 #include "tier1/interface.h"
 #include <stdarg.h>
 #include "sqstdstring.h"
@@ -38,6 +39,7 @@ public:
 	virtual bool SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype);
 	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var);
 	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap);
+	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset);
 };
 
 
@@ -141,11 +143,88 @@ bool CSquirrel::SetObjectVariant(SquirrelScript script, SquirrelObject obj, cons
 	{
 	case FIELD_INTEGER:
 		sq_getinteger(v, -1, (int*)var);
+		break;
 	case FIELD_FLOAT:
 		sq_getfloat(v, -1, (float*)var);
+		break;
+	case FIELD_BOOLEAN:
+		sq_getbool(v, -1, (unsigned int*)var);
+		break;
+	case FIELD_STRING:
+		sq_getstring(v, -1, (const char**)var);
+		break;
 	}
 	sq_pop(v, 1);
 	return SQ_SUCCEEDED(succ);
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: All types must be able to display as strings for debugging purposes.
+// Output : Returns a pointer to the string that represents this value.
+//
+//			NOTE: The returned pointer should not be stored by the caller as
+//				  subsequent calls to this function will overwrite the contents
+//				  of the buffer!
+//-----------------------------------------------------------------------------
+const char* variant_t::ToString(void) const
+{
+	COMPILE_TIME_ASSERT(sizeof(string_t) == sizeof(int));
+
+	static char szBuf[512];
+
+	switch (fieldType)
+	{
+	case FIELD_STRING:
+	{
+		return(STRING(iszVal));
+	}
+
+	case FIELD_BOOLEAN:
+	{
+		if (bVal == 0)
+		{
+			Q_strncpy(szBuf, "false", sizeof(szBuf));
+		}
+		else
+		{
+			Q_strncpy(szBuf, "true", sizeof(szBuf));
+		}
+		return(szBuf);
+	}
+
+	case FIELD_INTEGER:
+	{
+		Q_snprintf(szBuf, sizeof(szBuf), "%i", iVal);
+		return(szBuf);
+	}
+
+	case FIELD_FLOAT:
+	{
+		Q_snprintf(szBuf, sizeof(szBuf), "%g", flVal);
+		return(szBuf);
+	}
+
+	case FIELD_COLOR32:
+	{
+		Q_snprintf(szBuf, sizeof(szBuf), "%d %d %d %d", (int)rgbaVal.r, (int)rgbaVal.g, (int)rgbaVal.b, (int)rgbaVal.a);
+		return(szBuf);
+	}
+
+	case FIELD_VECTOR:
+	{
+		Q_snprintf(szBuf, sizeof(szBuf), "[%g %g %g]", (double)vecVal[0], (double)vecVal[1], (double)vecVal[2]);
+		return(szBuf);
+	}
+
+	case FIELD_VOID:
+	{
+		szBuf[0] = '\0';
+		return(szBuf);
+	}
+	}
+
+	return("No conversion to string");
 }
 
 bool CSquirrel::GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var)
@@ -162,6 +241,12 @@ bool CSquirrel::GetObjectVariant(SquirrelScript script, SquirrelObject obj, cons
 		break;
 	case FIELD_FLOAT:
 		sq_pushfloat(v, var->Float());
+		break;
+	case FIELD_BOOLEAN:
+		sq_pushbool(v, var->Bool());
+		break;
+	case FIELD_STRING:
+		sq_pushstring(v, var->String(), -1);
 		break;
 	}
 	SQRESULT succ = sq_set(v, -3);
@@ -184,6 +269,24 @@ datamap_t* CSquirrel::GenerateDatamap(SquirrelScript script, SquirrelObject obj,
 		typedescription_t hi = {};
 		bool hasdatadesc = false;
 		hi.flags = FTYPEDESC_SQUIRREL;
+		switch (sq_gettype(v, -1))
+		{
+		case OT_FLOAT:
+			hi.fieldType = FIELD_FLOAT;
+			break;
+		case OT_INTEGER:
+			hi.fieldType = FIELD_INTEGER;
+			break;
+		case OT_STRING:
+			hi.fieldType = FIELD_STRING;
+			break;
+		case OT_BOOL:
+			hi.fieldType = FIELD_BOOLEAN;
+			break;
+		default:
+			sq_pop(v, 2);
+			continue;
+		}
 		sq_pop(v, 1); // pop value
 
 		if (SQ_FAILED(sq_getattributes(v, -3)))
@@ -205,7 +308,6 @@ datamap_t* CSquirrel::GenerateDatamap(SquirrelScript script, SquirrelObject obj,
 			{
 				hasdatadesc = true;
 				sq_getstring(v, -1, &hi.fieldName);
-				hi.fieldType = FIELD_INTEGER;
 				hi.fieldOffset = 0;
 				hi.fieldSize = 1;
 				hi.fieldSizeInBytes = 4;
@@ -233,6 +335,88 @@ datamap_t* CSquirrel::GenerateDatamap(SquirrelScript script, SquirrelObject obj,
 	V_memcpy(dm->dataDesc, typedescs.Base(), sizeof(typedescription_t) * dm->dataNumFields);
 	return dm;
 
+}
+
+
+void SendProxy_SquirrelToFloat(const SendProp* pProp, const void* pStruct, const void* pData, DVariant* pOut, int iElement, int objectID)
+{
+	HSQOBJECT inst = *((HSQOBJECT*)pData);
+	HSQUIRRELVM v = *((HSQUIRRELVM*)((SquirrelObject*)pData+1));
+	sq_pushobject(v, inst);
+	sq_pushstring(v, (const char*)pProp->GetExtraData(), -1);
+	sq_get(v, -2);
+	sq_getfloat(v, -1, &pOut->m_Float);
+	sq_pop(v, 1);
+}
+
+void SendProxy_SquirrelToInt(const SendProp* pProp, const void* pStruct, const void* pData, DVariant* pOut, int iElement, int objectID)
+{
+	HSQOBJECT inst = *((HSQOBJECT*)pData);
+	HSQUIRRELVM v = *((HSQUIRRELVM*)((SquirrelObject*)pData + 1));
+	sq_pushobject(v, inst);
+	sq_pushstring(v, (const char*)pProp->GetExtraData(), -1);
+	sq_get(v, -2);
+	sq_getinteger(v, -1, (int*)&pOut->m_Int);
+	sq_pop(v, 1);
+}
+
+
+SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	HSQOBJECT inst = *(HSQOBJECT*)&obj;
+	SendTable* st = new SendTable();
+	CUtlVector<SendProp> sendprops;
+	sendprops.AddToTail(SendPropDataTable((char*)"baseclass", 0, basemap, SendProxy_DataTableToDataTable));
+	sq_pushobject(v, inst);
+	sq_pushnull(v);
+	while (SQ_SUCCEEDED(sq_next(v, -2)))
+	{
+		SQObjectType valtype = sq_gettype(v, -1);
+		SendProp prop;
+		sq_pop(v, 1);
+		if (SQ_FAILED(sq_getattributes(v, -3)))
+		{
+			sq_pop(v, 1);
+			continue;
+		}
+		if (sq_gettype(v, -1) != OT_TABLE)
+		{
+			sq_pop(v, 1);
+			continue;
+		}
+		sq_pushnull(v);
+		while (SQ_SUCCEEDED(sq_next(v, -2)))
+		{
+			const char* key;
+			sq_getstring(v, -2, &key); // TODO : dont do this
+			if (!V_strcmp(key, "sendprop"))
+			{
+				char* value;
+				sq_getstring(v, -1, (const char**)&value);
+				switch (valtype)
+				{
+				case OT_FLOAT:
+					prop = SendPropFloat(value, objOffset,-1,32,0,0.0f, HIGH_DEFAULT,SendProxy_SquirrelToFloat);
+					prop.SetExtraData(key);
+					break;
+				case OT_INTEGER:
+					prop = SendPropInt(value, objOffset,-1,-1,0,SendProxy_SquirrelToInt);
+					prop.SetExtraData(key);
+					break;
+				default:
+					continue;
+				}
+				sendprops.AddToTail(prop);
+				break;
+			}
+		}
+		sq_pop(v, 1);
+	}
+	SendProp* props = (SendProp*)MemAlloc_Alloc(sendprops.Count() * sizeof(SendProp));
+	memcpy(props, sendprops.Base(), sendprops.Count() * sizeof(SendProp));
+	st->Construct(props, sendprops.Count(), (char*)"DT_WHATEVERCHANGETHIS");
+	return st;
 }
 
 
