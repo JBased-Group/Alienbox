@@ -31,7 +31,11 @@ CSquirrelEntity::CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript)
 
 void CSquirrelEntity::Think()
 {
-	BaseClass::Think();
 	g_pSquirrel->CallObjectFunction(script, obj, "Think", "");
+}
+
+int CSquirrelEntity::UpdateTransmitState()
+{
+	return g_pSquirrel->CallObjectFunction(script, obj, "UpdateTransmitState", "").val_int; // TODO : type check
 }
 

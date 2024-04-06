@@ -15,6 +15,7 @@ public:
 
 	CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript);
 	virtual void Think();
+	virtual int UpdateTransmitState();
 	SquirrelObject obj;
 	SquirrelScript script;
 	datamap_t* m_dataMap;

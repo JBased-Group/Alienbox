@@ -434,6 +434,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd clien
     <ClInclude Include="..\shared\swarm\rd_vgui_vscript_shared.h" />
     <ClInclude Include="alienbox\c_abox_player.h" />
     <ClInclude Include="c_abox_weapon.h" />
+    <ClInclude Include="c_squirrel_entity.h" />
     <ClInclude Include="swarm\c_asw_colonist.h" />
     <ClInclude Include="swarm\c_rd_infection_deathmatch_stats.h" />
     <ClInclude Include="swarm\gameui\swarm\vgenericchoicelist.h" />
@@ -1027,6 +1028,7 @@ if exist ..\..\devtools\bin\postbuild.cmd ..\..\devtools\bin\postbuild.cmd clien
     <ClCompile Include="c_spotlight_end.cpp" />
     <ClCompile Include="c_sprite.cpp" />
     <ClCompile Include="c_sprite_perfmonitor.cpp" />
+    <ClCompile Include="c_squirrel_entity.cpp" />
     <ClCompile Include="c_steamjet.cpp" />
     <ClCompile Include="c_stickybolt.cpp" />
     <ClCompile Include="c_sun.cpp" />

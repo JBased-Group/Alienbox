@@ -7,6 +7,7 @@
 #include "../game/server/variant_t.h"
 #include "dt_common.h"
 #include "dt_send.h"
+#include "dt_recv.h"
 typedef void* SquirrelScript;
 
 enum SquirrelType
@@ -115,6 +116,7 @@ public:
 	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var) = 0;
 	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap) = 0;
 	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset) = 0;
+	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset) = 0;
 };
 
 

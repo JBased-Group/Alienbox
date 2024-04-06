@@ -141,6 +141,8 @@
 #include "keybindinglistener.h"
 #include "game_timescale_shared.h"
 
+#include "squirrel/squirrel.h"
+#include "c_squirrel_entity.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -187,6 +189,8 @@ IReplayHistoryManager *g_pReplayHistoryManager = NULL;
 #endif
 
 IScriptManager *scriptmanager = NULL;
+ISquirrel* g_pSquirrel = nullptr;
+CUtlVector<SquirrelScript> squirrelscripts;
 
 IGameSystem *SoundEmitterSystem();
 IGameSystem *ToolFrameworkClientSystem();
@@ -805,6 +809,7 @@ IBaseClientDLL *clientdll = &gHLClient;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CHLClient, IBaseClientDLL, CLIENT_DLL_INTERFACE_VERSION, gHLClient );
 
 
+
 //-----------------------------------------------------------------------------
 // Precaches a material
 //-----------------------------------------------------------------------------
@@ -1074,6 +1079,8 @@ bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 #include <windows.h>
 #undef AddJob
 
+void (*ClientDLL_InitRecvTableMgr)();
+
 char SDFLightmapPatch[] = { 0xeb,0x07,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x8b,0x83,0xc0,0x01,0x00,0x00,0x8b,0x54,0x24,0x50,0x90,0x90,0x90,0xf3,0x0f,0x2a,0xc2,0x8b,0x54,0x24,0x58,0xf3,0x0f,0x2a,0xca,0xf3,0x0f,0x5e,0xc1,0xf3,0x0f,0x11,0x40,0x04,0x8b,0x54,0x24,0x4c,0x90,0x90,0x90,0xf3,0x0f,0x2a,0xc2,0x8b,0x54,0x24,0x54,0xf3,0x0f,0x2a,0xca,0xf3,0x0f,0x5e,0xc1,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0xf3,0x0f,0x11,0x00 };
 
 //-----------------------------------------------------------------------------
@@ -1083,10 +1090,12 @@ char SDFLightmapPatch[] = { 0xeb,0x07,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x8b,0x
 //-----------------------------------------------------------------------------
 int CHLClient::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGlobals )
 {
-	char* BadLightmapCode = ((char*)GetProcAddress(GetModuleHandle("engine.dll"), "CreateInterface") - 0x261510 + 0x14fafb);
+	char* engdllstart = (char*)GetProcAddress(GetModuleHandle("engine.dll"), "CreateInterface") - 0x261510;
+	char* BadLightmapCode = (engdllstart + 0x14fafb);
 	DWORD oldpage;
 	VirtualProtect(BadLightmapCode, sizeof(SDFLightmapPatch), PAGE_EXECUTE_READWRITE, &oldpage);
 	memcpy(BadLightmapCode, SDFLightmapPatch, sizeof(SDFLightmapPatch));
+	ClientDLL_InitRecvTableMgr = (void (*)())(engdllstart + 0xdb580);
 	InitCRTMemDebug();
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 
@@ -1099,6 +1108,16 @@ int CHLClient::Connect( CreateInterfaceFn appSystemFactory, CGlobalVarsBase *pGl
 
 	// Initialize the console variables.
 	ConVar_Register( FCVAR_CLIENTDLL );
+
+	CSysModule* pSquirrelDLL = g_pFullFileSystem->LoadModule("squirrel", "GAMEBIN", false);
+	if (pSquirrelDLL != nullptr)
+	{
+		CreateInterfaceFn squirrelFactory = Sys_GetFactory(pSquirrelDLL);
+		if (squirrelFactory != nullptr)
+		{
+			g_pSquirrel = (ISquirrel*)squirrelFactory(INTERFACESQUIRREL_VERSION, NULL);
+		}
+	}
 
 	return true;
 }
@@ -1800,6 +1819,190 @@ void ConfigureCurrentSystemLevel()
 
 
 
+class SquirrelEntityFactory
+{
+public:
+	DECLSPEC_NOINLINE virtual IClientNetworkable* CreateEnt(int entnum, int serialNum)
+	{
+		C_SquirrelEntity* pRet = new C_SquirrelEntity;
+		if (!pRet) return 0;
+		pRet->script = script;
+		pRet->cls = cls;
+		pRet->clientclass = clientclass;
+		pRet->Init(entnum, serialNum);
+		return pRet;
+	}
+
+	SquirrelObject cls;
+	SquirrelScript script;
+	ClientClass* clientclass;
+};
+
+static IClientNetworkable* CreateEnt(int entnum, int serialNum)
+{
+	SquirrelEntityFactory* lol;
+	__asm
+	{
+		mov [lol], edx
+	}
+	return lol->CreateEnt(entnum, serialNum);
+}
+
+int SQ_DeclareClientClass(SquirrelScript script)
+{
+	SquirrelObject cls;
+	if (!g_pSquirrel->GetArgs(script, "c", &cls))
+	{
+		return 0;
+	}
+	g_pSquirrel->IncrementRefCount(script, cls);
+	SquirrelEntityFactory* entfactory = new SquirrelEntityFactory;
+	entfactory->cls = cls;
+	entfactory->script = script;
+	char* createsquirrelentfunc = (char*)VirtualAlloc(0, 10, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	createsquirrelentfunc[0] = '\xba';
+	*(void**)&createsquirrelentfunc[1] = entfactory;
+	createsquirrelentfunc[5] = '\xe9';
+	*(int*)&createsquirrelentfunc[6] = (int)(&CreateEnt) - (int)createsquirrelentfunc - 10; // offset to SquirrelEntityFactory::CreateEnt from &createsquirrelentfunc[5];
+	entfactory->clientclass = new ClientClass("CSquirrelEntity", (CreateClientClassFn)createsquirrelentfunc, 0, g_pSquirrel->GenerateRecvtable(script,cls,C_BaseEntity::m_pClassRecvTable,(size_t)&((C_SquirrelEntity*)0)->cls));
+	entfactory->clientclass->m_ClassID = 0;
+	return 0;
+}
+
+#define LIBRARY_NAME VectorBindings
+constexpr ListOfStuff<1> VectorBindings0x0000 = { 0,0 };
+SquirrelObject SQVector;
+
+int SQ_Vector(SquirrelScript script)
+{
+	float x, y, z;
+	if (!g_pSquirrel->GetArgs(script, "fff", &x, &y, &z))
+	{
+		return 0;
+	}
+	SquirrelValue v = g_pSquirrel->InstantiateClass(script, SQVector);
+	g_pSquirrel->SetObjectUserdata(script, v.val_obj, new Vector(x, y, z), TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushValue(script, v);
+	return 1;
+}
+
+
+static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector, TypeIdentifier<Vector*>::id(),
+
+"",nullptr,nullptr,nullptr };
+
+extern void RegisterC_BaseEntitySquirrelFunctions(SquirrelScript script);
+
+void RegisterAllSquirrel(SquirrelScript script)
+{
+	g_pSquirrel->AddFunction(script, "CreateVector", SQ_Vector);
+	g_pSquirrel->RegisterClasses(script, entc);
+	RegisterC_BaseEntitySquirrelFunctions(script);
+}
+
+SquirrelFunctionDecl hello[] = { "DeclareClientClass",SQ_DeclareClientClass,
+
+"",nullptr };
+
+void LoadMod(const char* path)
+{
+	int len = strlen(path);
+	if (len < 4 || !(path[len - 4] == '.' && path[len - 3] == 'n' && path[len - 2] == 'u' && path[len - 1] == 't'))
+		return;
+
+	CUtlBuffer codebuffer;
+
+	codebuffer.Clear();
+
+	if (g_pFullFileSystem->ReadFile(path, NULL, codebuffer))
+	{
+		SquirrelScript script = g_pSquirrel->LoadScript((const char*)(codebuffer.Base()), hello, RegisterAllSquirrel);
+		if (!script)
+		{
+			return;
+		}
+
+		SquirrelValue returned = g_pSquirrel->CallFunction(script, "OnModStart", "");
+		switch (returned.type)
+		{
+		case SQUIRREL_INT:
+			Msg("Squirrel %s returned int : %i\n", path, returned.val_int);
+			break;
+		case SQUIRREL_BOOL:
+			Msg("Squirrel %s returned bool : %s\n", path, returned.val_bool ? "true" : "false");
+			break;
+		case SQUIRREL_FLOAT:
+			Msg("Squirrel %s returned float : %f\n", path, returned.val_float);
+			break;
+		case SQUIRREL_STRING:
+			Msg("Squirrel %s returned string : %s\n", path, returned.val_string);
+			break;
+		default:
+			Msg("Squirrel %s failed to execute/return a value\n", path);
+			break;
+		}
+		squirrelscripts.AddToTail(script);
+	}
+}
+
+void LoadFilesInDirectory(const char* modname, const char* folder, const char* filename)
+{
+	FileFindHandle_t findHandle;
+	char searchPath[MAX_PATH];
+	strcpy(searchPath, "mods/");
+	strncat(searchPath, folder, MAX_PATH);
+	strncat(searchPath, "/*", MAX_PATH);
+	const char* pszFileName = g_pFullFileSystem->FindFirst(searchPath, &findHandle);
+	char pszFileNameNoExt[MAX_PATH];
+	while (pszFileName)
+	{
+		if (pszFileName[0] == '.')
+		{
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		if (g_pFullFileSystem->FindIsDirectory(findHandle))
+		{
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		V_StripExtension(pszFileName, pszFileNameNoExt, MAX_PATH);
+		if (V_strcmp(filename, pszFileNameNoExt) == 0)
+		{
+			char pFilePath[MAX_PATH];
+			strcpy(pFilePath, "mods/");
+			strncat(pFilePath, folder, MAX_PATH);
+			V_AppendSlash(pFilePath, MAX_PATH);
+			strncat(pFilePath, pszFileName, MAX_PATH);
+			LoadMod(pFilePath);
+		}
+		pszFileName = g_pFullFileSystem->FindNext(findHandle);
+	}
+}
+
+void LoadSquirrel()
+{
+	FileFindHandle_t findHandle;
+	const char* pszFileName = g_pFullFileSystem->FindFirst("mods/*", &findHandle);
+	while (pszFileName)
+	{
+		if (pszFileName[0] == '.')
+		{
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		if (g_pFullFileSystem->FindIsDirectory(findHandle))
+		{
+			LoadFilesInDirectory(pszFileName, pszFileName, "cl_main");
+			pszFileName = g_pFullFileSystem->FindNext(findHandle);
+			continue;
+		}
+		pszFileName = g_pFullFileSystem->FindNext(findHandle);
+	}
+	g_pFullFileSystem->FindClose(findHandle);
+	ClientDLL_InitRecvTableMgr();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Per level init
 //-----------------------------------------------------------------------------
@@ -1809,6 +2012,7 @@ void CHLClient::LevelInitPreEntity( char const* pMapName )
 	if (g_bLevelInitialized)
 		return;
 	g_bLevelInitialized = true;
+
 
 	engine->TickProgressBar();
 

@@ -40,6 +40,7 @@ public:
 	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var);
 	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap);
 	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset);
+	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset);
 };
 
 
@@ -397,11 +398,11 @@ SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject ob
 				switch (valtype)
 				{
 				case OT_FLOAT:
-					prop = SendPropFloat(value, objOffset,-1,32,0,0.0f, HIGH_DEFAULT,SendProxy_SquirrelToFloat);
+					prop = SendPropFloat(value, objOffset,4,32,0,0.0f, HIGH_DEFAULT,SendProxy_SquirrelToFloat);
 					prop.SetExtraData(key);
 					break;
 				case OT_INTEGER:
-					prop = SendPropInt(value, objOffset,-1,-1,0,SendProxy_SquirrelToInt);
+					prop = SendPropInt(value, objOffset,4,-1,0,SendProxy_SquirrelToInt);
 					prop.SetExtraData(key);
 					break;
 				default:
@@ -420,6 +421,87 @@ SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject ob
 }
 
 
+
+void RecvProxy_IntToSquirrel(const CRecvProxyData* pData, void* pStruct, void* pOut)
+{
+	HSQOBJECT inst = *((HSQOBJECT*)pOut);
+	HSQUIRRELVM v = *((HSQUIRRELVM*)((SquirrelObject*)pOut + 1));
+	sq_pushobject(v, inst);
+	sq_pushstring(v, (const char*)pData->m_pRecvProp->GetExtraData(), -1);
+	sq_pushinteger(v, (int)pData->m_Value.m_Int);
+	sq_set(v, -3);
+	sq_pop(v, 1);
+}
+
+void RecvProxy_FloatToSquirrel(const CRecvProxyData* pData, void* pStruct, void* pOut)
+{
+	HSQOBJECT inst = *((HSQOBJECT*)pOut);
+	HSQUIRRELVM v = *((HSQUIRRELVM*)((SquirrelObject*)pOut + 1));
+	sq_pushobject(v, inst);
+	sq_pushstring(v, (const char*)pData->m_pRecvProp->GetExtraData(), -1);
+	sq_pushfloat(v, pData->m_Value.m_Float);
+	sq_set(v, -3);
+	sq_pop(v, 1);
+}
+
+
+RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	HSQOBJECT inst = *(HSQOBJECT*)&obj;
+	RecvTable* rt = new RecvTable();
+	CUtlVector<RecvProp> recvprops;
+	recvprops.AddToTail(RecvPropDataTable((char*)"baseclass", 0, 0, basemap, DataTableRecvProxy_StaticDataTable));
+	sq_pushobject(v, inst);
+	sq_pushnull(v);
+	while (SQ_SUCCEEDED(sq_next(v, -2)))
+	{
+		SQObjectType valtype = sq_gettype(v, -1);
+		RecvProp prop;
+		sq_pop(v, 1);
+		if (SQ_FAILED(sq_getattributes(v, -3)))
+		{
+			sq_pop(v, 1);
+			continue;
+		}
+		if (sq_gettype(v, -1) != OT_TABLE)
+		{
+			sq_pop(v, 1);
+			continue;
+		}
+		sq_pushnull(v);
+		while (SQ_SUCCEEDED(sq_next(v, -2)))
+		{
+			const char* key;
+			sq_getstring(v, -2, &key); // TODO : dont do this
+			if (!V_strcmp(key, "recvprop"))
+			{
+				char* value;
+				sq_getstring(v, -1, (const char**)&value);
+				switch (valtype)
+				{
+				case OT_FLOAT:
+					prop = RecvPropFloat(value, objOffset, 4, 0, RecvProxy_FloatToSquirrel);
+					prop.SetExtraData(key);
+					break;
+				case OT_INTEGER:
+					prop = RecvPropInt(value, objOffset, 4, 0, RecvProxy_IntToSquirrel);
+					prop.SetExtraData(key);
+					break;
+				default:
+					continue;
+				}
+				recvprops.AddToTail(prop);
+				break;
+			}
+		}
+		sq_pop(v, 1);
+	}
+	RecvProp* props = (RecvProp*)MemAlloc_Alloc(recvprops.Count() * sizeof(RecvProp));
+	memcpy(props, recvprops.Base(), recvprops.Count() * sizeof(RecvProp));
+	rt->Construct(props, recvprops.Count(), (char*)"DT_WHATEVERCHANGETHIS");
+	return rt;
+}
 
 
 SquirrelValue CSquirrel::InstantiateClass(SquirrelScript script, SquirrelObject cls)

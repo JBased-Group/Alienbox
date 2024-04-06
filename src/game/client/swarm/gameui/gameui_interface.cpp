@@ -802,13 +802,22 @@ void CGameUI::OnLevelLoadingFinished(bool bError, const char *failureReason, con
 
 
 }
-
+extern void LoadSquirrel();
+float lastprogress = 100.0f; // evil hack
 //-----------------------------------------------------------------------------
 // Purpose: Updates progress bar
 // Output : Returns true if screen should be redrawn
 //-----------------------------------------------------------------------------
 bool CGameUI::UpdateProgressBar(float progress, const char *statusText)
 {
+	if (statusText && !V_strcmp(statusText, "#LoadingProgress_SignonDataLocal"))
+	{
+		if (progress < lastprogress)
+		{
+			LoadSquirrel();
+		}
+		lastprogress = progress;
+	}
 	return GetUiBaseModPanelClass().UpdateProgressBar(progress, statusText);
 }
 

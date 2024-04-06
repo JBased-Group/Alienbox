@@ -14,7 +14,7 @@
 
 #if !defined(_STATIC_LINKED) || defined(CLIENT_DLL)
 
-char *s_ClientElementNames[MAX_ARRAY_ELEMENTS] =
+const char *s_ClientElementNames[MAX_ARRAY_ELEMENTS] =
 {
 	"000", "001", "002", "003", "004", "005", "006", "007", "008", "009", 
 	"010", "011", "012", "013", "014", "015", "016", "017", "018", "019",
@@ -405,7 +405,7 @@ RecvProp RecvPropArray3(
 	{
 		pProps[i] = pArrayProp; // copy basic property settings 
 		pProps[i].SetOffset( i * sizeofVar ); // adjust offset
-		pProps[i].m_pVarName = s_ClientElementNames[i]; // give unique name
+		pProps[i].m_pVarName = (char*)s_ClientElementNames[i]; // give unique name
 		pProps[i].SetParentArrayPropName( pParentArrayPropName ); // For debugging...
 	}
 

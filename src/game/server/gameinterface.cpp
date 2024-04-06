@@ -184,7 +184,6 @@ IScriptManager *scriptmanager = nullptr;
 IBlackBox *blackboxrecorder = nullptr;
 ISquirrel* g_pSquirrel = nullptr;
 CUtlVector<SquirrelScript> squirrelscripts;
-CUtlStringMap<CUtlMap<int, SquirrelHandle>> squirrelhandles;
 
 #ifdef INFESTED_DLL
 IASW_Mission_Chooser *missionchooser = nullptr;
@@ -616,7 +615,18 @@ static bool InitGameSystems( CreateInterfaceFn appSystemFactory )
 	return true;
 }
 
+#include <windows.h>
+#undef AddJob
+
 CServerGameDLL g_ServerGameDLL;
+
+void(__stdcall *newCSendTablePrecalc)();
+void(__stdcall *FUN_1003f350)(void*);
+void*(__stdcall *FUN_1003c020)(void*);
+bool(__stdcall *FUN_10035ed0)();
+void(__stdcall *FUN_10040290)(void*);
+
+
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerGameDLL, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, g_ServerGameDLL);
 
 bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory, 
@@ -624,7 +634,12 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		CGlobalVars *pGlobals)
 {
 
-	
+	char* engdllstart = (char*)GetProcAddress(GetModuleHandle("engine.dll"), "CreateInterface") - 0x261510;
+	newCSendTablePrecalc = reinterpret_cast<void(__stdcall *)()>(engdllstart + 0x35d30);
+	FUN_1003f350 = reinterpret_cast<void(__stdcall *)(void*)>(engdllstart + 0x3f350);
+	FUN_1003c020 = reinterpret_cast<void*(__stdcall *)(void*)>(engdllstart + 0x3c020);
+	FUN_10035ed0 = reinterpret_cast<bool(__stdcall *)()>(engdllstart + 0x35ed0);
+	FUN_10040290 = reinterpret_cast<void(__stdcall *)(void*)>(engdllstart + 0x40290);
 
 	COM_TimestampedLog( "ConnectTier1/2/3Libraries - Start" );
 
@@ -963,8 +978,27 @@ public:
 	{
 		theentity = sqent;
 		thescript = script;
-		datamap = g_pSquirrel->GenerateDatamap(thescript, theentity, &CBaseEntity::m_DataMap);;
-		serverclass = new ServerClass("WhjateverReplaceThis", g_pSquirrel->GenerateSendtable(thescript, theentity, CBaseEntity::m_pClassSendTable, (size_t)&((CSquirrelEntity*)0)->obj));
+		datamap = g_pSquirrel->GenerateDatamap(thescript, theentity, &CBaseEntity::m_DataMap);
+		serverclass = new ServerClass("CSquirrelEntity", g_pSquirrel->GenerateSendtable(thescript, theentity, CBaseEntity::m_pClassSendTable, (size_t)&((CSquirrelEntity*)0)->obj));
+		CSendTablePrecalc* cstp = (CSendTablePrecalc*)MemAlloc_Alloc(0x118);
+		__asm
+		{
+			mov ecx, cstp
+			call newCSendTablePrecalc
+		}
+		*(void**)((char*)cstp + 0x8c) = serverclass->m_pTable;
+		serverclass->m_pTable->m_pPrecalc = cstp;
+		FUN_1003f350(serverclass->m_pTable);
+		*(void**)((char*)cstp + 0x90) = FUN_1003c020(serverclass->m_pTable);
+		__asm
+		{
+			mov ecx, cstp
+		}
+		if (!FUN_10035ed0())
+		{
+			Msg("Whoopsies!\n");
+		}
+		FUN_10040290(cstp);
 		EntityFactoryDictionary()->InstallFactory(this, pClassName);
 	}
 
@@ -1004,23 +1038,6 @@ public:
 
 
 
-
-int SQ_SetPosition(SquirrelScript script)
-{
-	SquirrelObject obj;
-	if (!g_pSquirrel->GetSQObject(script, obj))
-	{
-		return 0;
-	}
-	float x, y, z;
-	if (!g_pSquirrel->GetArgs(script, "fff", &x, &y, &z))
-	{
-		return 0;
-	}
-	CBaseEntity* ent = (CBaseEntity*)g_pSquirrel->GetObjectUserdata(script, obj);
-	ent->SetAbsOrigin(Vector(x, y, z));
-	return 0;
-}
 
 int SQ_LinkEntityToClass(SquirrelScript script)
 {

@@ -11,7 +11,7 @@
 #include "tier0/memdbgon.h"
 
 
-extern char *s_ClientElementNames[MAX_ARRAY_ELEMENTS];
+extern const char *s_ClientElementNames[MAX_ARRAY_ELEMENTS];
 
 
 class CRecvPropExtra_UtlVector
@@ -130,7 +130,7 @@ RecvProp RecvPropUtlVector(
 	{
 		pProps[i] = pArrayProp;	// copy array element property setting
 		pProps[i].SetOffset( 0 ); // leave offset at 0 so pStructBase is always a pointer to the CUtlVector
-		pProps[i].m_pVarName = s_ClientElementNames[i-1];	// give unique name
+		pProps[i].m_pVarName = (char*)s_ClientElementNames[i-1];	// give unique name
 		pProps[i].SetExtraData( pExtraData );
 		pProps[i].SetElementStride( i-1 );	// Kind of lame overloading element stride to hold the element index,
 											// but we can easily move it into its SetExtraData stuff if we need to.

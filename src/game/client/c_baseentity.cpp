@@ -42,9 +42,24 @@
 #include "clientalphaproperty.h"
 #include "cellcoord.h"
 #include "gamestringpool.h"
+#include "squirrel/squirrel.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+
+#define LIBRARY_NAME C_BaseEntityBindings
+STARTLIBRARY
+
+
+
+extern ISquirrel* g_pSquirrel;
+
+template <>
+static inline bool ConvertToCpp<C_BaseEntity*>(SquirrelScript script, C_BaseEntity** valOut, int a)
+{
+	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<C_BaseEntity*>::id());
+}
 
 
 #ifdef INTERPOLATEDVAR_PARANOID_MEASUREMENT
@@ -6455,3 +6470,16 @@ void CC_CL_Find_Ent_Index( const CCommand& args )
 	}
 }
 static ConCommand cl_find_ent_index("cl_find_ent_index", CC_CL_Find_Ent_Index, "Display data for clientside entity matching specified index.\nFormat: cl_find_ent_index <index>\n", FCVAR_CHEAT);
+
+SquirrelObject SQC_BaseEntity;
+
+
+static SquirrelClassDecl entc[] = { "C_BaseEntity", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQC_BaseEntity, TypeIdentifier<C_BaseEntity*>::id(),
+
+"",nullptr,nullptr, nullptr };
+
+
+void RegisterC_BaseEntitySquirrelFunctions(SquirrelScript script)
+{
+	g_pSquirrel->RegisterClasses(script, entc);
+}
