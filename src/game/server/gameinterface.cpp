@@ -1069,6 +1069,7 @@ int SQ_Vector(SquirrelScript script)
 	return 1;
 }
 
+SQBINDING* sq_bindings = 0;
 
 static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector, TypeIdentifier<Vector*>::id(),
 
@@ -1081,7 +1082,23 @@ void RegisterAllSquirrel(SquirrelScript script)
 	g_pSquirrel->AddFunction(script, "CreateVector", SQ_Vector);
 	g_pSquirrel->RegisterClasses(script, entc);
 	RegisterCBaseEntitySquirrelFunctions(script);
-	RegisterCBaseCombatWeaponSquirrelFunctions(script);
+
+	while (sq_bindings)
+	{
+		if (sq_bindings->classdcl)
+			g_pSquirrel->RegisterClasses(script, sq_bindings->classdcl);
+
+		if (sq_bindings->funcdcl)
+		{
+			while (sq_bindings->funcdcl->ptr)
+			{
+				g_pSquirrel->AddFunction(script, sq_bindings->funcdcl->name, sq_bindings->funcdcl->ptr);
+				sq_bindings->funcdcl++;
+			}
+		}
+
+		sq_bindings = sq_bindings->next;
+	}
 }
 
 SquirrelFunctionDecl hello[] = { "LinkEntityToClass",SQ_LinkEntityToClass,

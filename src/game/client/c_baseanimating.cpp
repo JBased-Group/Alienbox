@@ -62,7 +62,7 @@
 #ifdef DEMOPOLISH_ENABLED
 #include "demo_polish/demo_polish.h"
 #endif
-
+#include "squirrel/squirrel.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -3470,7 +3470,92 @@ bool C_BaseAnimating::ComputeStencilState( ShaderStencilState_t *pStencilState )
 #endif
 }
 
+TEMPORARY_TO_CPP(matrix3x4_t*)
+TEMPORARY_FROM_CPP(matrix3x4_t*)
 
+TEMPORARY_TO_CPP(matrix3x4_t**)
+
+TEMPORARY_TO_CPP(ModelRenderInfo_t*)
+TEMPORARY_TO_CPP(DrawModelState_t*)
+
+TEMPORARY_FROM_CPP(QAngle*)
+TEMPORARY_FROM_CPP(Vector*)
+
+TEMPORARY_FROM_CPP(IVModelRender*)
+
+
+TEMPORARY_TO_CPP(model_t*)
+TEMPORARY_FROM_CPP(model_t*)
+
+TEMPORARY_TO_CPP(IClientRenderable*)
+TEMPORARY_FROM_CPP(IClientRenderable*)
+
+TEMPORARY_TO_CPP(ClientModelRenderInfo_t*)
+
+#define SQ_CLASSNAME ClientModelRenderInfo_t
+#include "squirrel/StartLibrary.h"
+
+#define SQ_VARNAME flags
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME pRenderable
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME instance
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME entity_index
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME pModel
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME origin
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME angles
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME skin
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME body
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME hitboxset
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME pModelToWorld
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME lightingOffset
+#include "squirrel/MakeGetterSetter.h"
+
+ENDSQCLASS
+
+
+#define SQ_CLASSNAME IVModelRender
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() IVModelRender,DrawModelSetup
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() IVModelRender,DrawModelExecute
+#include "squirrel/AddInterfaceBinding.h"
+
+ENDSQCLASS
+
+#define SQ_CLASSNAME IVModelRender_Getter
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() (IVModelRender*,GetModelRender,())
+#include "squirrel/AddToBindings.h"
+{
+	return modelrender;
+}
+
+#define SQ_CLASSNAME IVModelRender
+ENDSQFUNCTIONS
 
 //-----------------------------------------------------------------------------
 // Purpose: Draws the object

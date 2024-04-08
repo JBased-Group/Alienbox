@@ -1826,8 +1826,14 @@ public:
 	{
 		C_SquirrelEntity* pRet = new C_SquirrelEntity;
 		if (!pRet) return 0;
+		SquirrelValue obj = g_pSquirrel->InstantiateClass(script, cls);
+		if (obj.type != SQUIRREL_OBJECT)
+		{
+			return 0;
+		}
+		g_pSquirrel->SetObjectUserdata(script, obj.val_obj, pRet , TypeIdentifier<C_BaseEntity*>::id());
 		pRet->script = script;
-		pRet->cls = cls;
+		pRet->obj = obj.val_obj;
 		pRet->clientclass = clientclass;
 		pRet->Init(entnum, serialNum);
 		return pRet;
@@ -1864,10 +1870,12 @@ int SQ_DeclareClientClass(SquirrelScript script)
 	*(void**)&createsquirrelentfunc[1] = entfactory;
 	createsquirrelentfunc[5] = '\xe9';
 	*(int*)&createsquirrelentfunc[6] = (int)(&CreateEnt) - (int)createsquirrelentfunc - 10; // offset to SquirrelEntityFactory::CreateEnt from &createsquirrelentfunc[5];
-	entfactory->clientclass = new ClientClass("CSquirrelEntity", (CreateClientClassFn)createsquirrelentfunc, 0, g_pSquirrel->GenerateRecvtable(script,cls,C_BaseEntity::m_pClassRecvTable,(size_t)&((C_SquirrelEntity*)0)->cls));
+	entfactory->clientclass = new ClientClass("CSquirrelEntity", (CreateClientClassFn)createsquirrelentfunc, 0, g_pSquirrel->GenerateRecvtable(script,cls,C_BaseEntity::m_pClassRecvTable,(size_t)&((C_SquirrelEntity*)0)->obj));
 	entfactory->clientclass->m_ClassID = 0;
 	return 0;
 }
+
+SQBINDING* sq_bindings = 0;
 
 #define LIBRARY_NAME VectorBindings
 constexpr ListOfStuff<1> VectorBindings0x0000 = { 0,0 };
@@ -1889,7 +1897,7 @@ int SQ_Vector(SquirrelScript script)
 
 static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector, TypeIdentifier<Vector*>::id(),
 
-"",nullptr,nullptr,nullptr };
+nullptr,nullptr,nullptr,nullptr };
 
 extern void RegisterC_BaseEntitySquirrelFunctions(SquirrelScript script);
 
@@ -1898,6 +1906,24 @@ void RegisterAllSquirrel(SquirrelScript script)
 	g_pSquirrel->AddFunction(script, "CreateVector", SQ_Vector);
 	g_pSquirrel->RegisterClasses(script, entc);
 	RegisterC_BaseEntitySquirrelFunctions(script);
+
+	while (sq_bindings)
+	{
+		if(sq_bindings->classdcl)
+			g_pSquirrel->RegisterClasses(script, sq_bindings->classdcl);
+		
+		if (sq_bindings->funcdcl)
+		{
+			while (sq_bindings->funcdcl->ptr)
+			{
+				g_pSquirrel->AddFunction(script, sq_bindings->funcdcl->name, sq_bindings->funcdcl->ptr);
+				sq_bindings->funcdcl++;
+			}
+		}
+
+		sq_bindings = sq_bindings->next;
+	}
+
 }
 
 SquirrelFunctionDecl hello[] = { "DeclareClientClass",SQ_DeclareClientClass,

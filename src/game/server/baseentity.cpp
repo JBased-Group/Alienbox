@@ -108,7 +108,7 @@ static inline bool ConvertToCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t
 }
 
 #define LIBRARY_NAME CBaseEntityBindings
-STARTLIBRARY
+#include "squirrel/StartLibrary.h"
 
 
 extern bool g_bTestMoveTypeStepSimulation;
@@ -8921,7 +8921,12 @@ void CC_Ent_Orient( const CCommand& args )
 }
 
 static ConCommand ent_orient("ent_orient", CC_Ent_Orient, "Orient the specified entity to match the player's angles. By default, only orients target entity's YAW. Use the 'allangles' option to orient on all axis.\n\tFormat: ent_orient <entity name> <optional: allangles>", FCVAR_CHEAT);
-
+/*
+int CBaseEntitySQConstructor(SquirrelScript script)
+{
+	g_pSquirrel->SetObjectUserdata()
+}
+*/
 SquirrelObject SQCBaseEntity;
 
 

@@ -6,6 +6,7 @@
 // $NoKeywords: $
 //===========================================================================//
 #include "cbase.h"
+#undef clamp
 #include <algorithm>
 #include "DetailObjectSystem.h"
 #include "GameBspFile.h"

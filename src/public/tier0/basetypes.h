@@ -110,6 +110,7 @@ FORCEINLINE float fpmax( float a, float b )
 	return ( a > b ) ? a : b;
 }
 #endif
+#ifndef _ALGORITHM_
 
 #ifdef __cplusplus
 
@@ -129,7 +130,7 @@ inline T clamp( T const &val, Y const &minVal, Y const &maxVal )
 #define clamp(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
 #endif
-
+#endif
 #ifndef FALSE
 #define FALSE 0
 #define TRUE (!FALSE)

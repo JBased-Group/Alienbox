@@ -1,0 +1,4 @@
+#define LIBRARY_NAME CONCAT(SQ_CLASSNAME,_Bindings)
+#define COUNTER_B 0x0000
+#define COUNTER_A 0x0001
+constexpr ListOfStuff<COUNTER_A> CONCAT(LIBRARY_NAME, COUNTER_B) = { 0,0 };

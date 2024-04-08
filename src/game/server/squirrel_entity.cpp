@@ -29,6 +29,11 @@ CSquirrelEntity::CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript)
 	script = sqscript;
 }
 
+void CSquirrelEntity::Spawn()
+{
+	g_pSquirrel->CallObjectFunction(script, obj, "Spawn", "");
+}
+
 void CSquirrelEntity::Think()
 {
 	g_pSquirrel->CallObjectFunction(script, obj, "Think", "");

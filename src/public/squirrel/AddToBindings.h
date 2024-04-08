@@ -1,7 +1,5 @@
 #pragma message(STRINGG(SQ_FUNCTION()))
-
 SQ_FUNCTION_DECLFUNC(SQ_FUNCTION())
-
 static constexpr auto CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG) = GetSignature(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()));
 
 #define GetStackArg(a) \
@@ -42,13 +40,14 @@ else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 's') \
 { \
 	g_pSquirrel->PushString(script, returnvar); \
 } \
-else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'p') \
-{ \
-	g_pSquirrel->PushPtr(script, returnvar, CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG).TypeNames[0]); \
-} \
 else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'b') \
 { \
 	g_pSquirrel->PushInt(script, (int)returnvar); \
+} \
+else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'p') \
+{ \
+	if(!((GenericConverterFromCpp)(((void* (*)())CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG).ConvertCpp[0])()))(script,returnvar)) \
+		return 0; \
 }
 
 
@@ -106,7 +105,7 @@ if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'v') \
 } \
 else \
 { \
-	Return_Type returnvar; \
+	UnRef<Return_Type>::Ptr returnvar; \
 	if constexpr (count == 2) \
 	{ \
 		returnvar = (obj->*((Return_Type(CLCNV Class_Name::*)(FourByteValue))func))(argi[0]); \
@@ -214,7 +213,7 @@ if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'v') \
 } \
 else \
 { \
-	Return_Type returnvar; \
+	UnRef<Return_Type>::Ptr returnvar; \
 	if constexpr (count == 2) \
 	{ \
 		returnvar = ((Return_Type(CLCNV *)(FourByteValue))func)(argi[0]); \
@@ -271,6 +270,7 @@ else \
 template<typename Class_Name, typename Return_Type>
 int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION())(SquirrelScript script)
 {
+	extern ISquirrel* g_pSquirrel;
 	static constexpr unsigned int count = sizeof(CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)).Data - 1;
 	constexpr auto func = &SQ_FUNCTION_CLSNAME(SQ_FUNCTION());
 	if constexpr (Same<Class_Name, void>)
@@ -283,7 +283,7 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION())(SquirrelScript script)
 			}
 			else
 			{
-				auto returnvar = func();
+				UnRef<Return_Type>::Ptr returnvar = func();
 				ReturnToStack()
 				return 1;
 			}
@@ -327,7 +327,7 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION())(SquirrelScript script)
 			}
 			else
 			{
-				auto returnvar = (obj->*((Return_Type(__thiscall Class_Name::*)())func))();
+				UnRef<Return_Type>::Ptr returnvar = (obj->*((UnRef<Return_Type>::Ptr(__thiscall Class_Name::*)())func))();
 				ReturnToStack()
 				return 1;
 			}
@@ -382,6 +382,7 @@ constexpr auto SQ_FUNCTION_CLS_NAME_EXPAND(SQ_FUNCTION())(Return_Type(*)(Argumen
 constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), (SQ_FUNCTION_CLS_NAME_EXPAND(SQ_FUNCTION())(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()))), STRINGG(SQ_FUNCTION_NAME(SQ_FUNCTION())));
 #include INCREMENT_COUNTER_A
 #include INCREMENT_COUNTER_B
+
 
 SQ_FUNCTION_DECL(SQ_FUNCTION())
 #undef SQ_FUNCTION

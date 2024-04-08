@@ -30,6 +30,7 @@ public:
 	virtual bool GetStackFloat(SquirrelScript script, int i, float* val);
 	virtual bool GetStackString(SquirrelScript script, int i, const char** val);
 	virtual bool GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag);
+	virtual bool GetStackUserPtr(SquirrelScript script, int i, void** val);
 	virtual void PushInt(SquirrelScript script, int val);
 	virtual void PushFloat(SquirrelScript script, float val);
 	virtual void PushString(SquirrelScript script, const char* val);
@@ -86,6 +87,12 @@ bool CSquirrel::GetStackPtr(SquirrelScript script, int i, void** val, const int*
 	return SQ_SUCCEEDED(sq_getinstanceup((HSQUIRRELVM)script, i, val, (void*)typetag, SQFalse));
 }
 
+bool CSquirrel::GetStackUserPtr(SquirrelScript script, int i, void** val)
+{
+	return SQ_SUCCEEDED(sq_getuserpointer((HSQUIRRELVM)script, i, val));
+}
+
+
 void CSquirrel::PushInt(SquirrelScript script, int val)
 {
 	sq_pushinteger((HSQUIRRELVM)script, val);
@@ -121,7 +128,14 @@ void CSquirrel::RegisterClasses(SquirrelScript script, SquirrelClassDecl* classe
 		sq_getstackobj(v, -1, (HSQOBJECT*)classes->clsobj);
 		while (classes->funcs->ptr)
 		{
-			sq_pushstring(v, classes->funcs->name, -1);
+			if (!classes->funcs->name)
+			{
+				sq_pushnull(v);
+			}
+			else
+			{
+				sq_pushstring(v, classes->funcs->name, -1);
+			}
 			sq_newclosure(v, (SQFUNCTION)classes->funcs->ptr, 0);
 			sq_newslot(v, -3, false);
 			classes->funcs++;
@@ -544,7 +558,7 @@ SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObjec
 		sq_pop(v, 1);
 		return ret;
 	}
-	sq_pushroottable(v);
+	sq_pushobject(v, object);
 	int count = strlen(types);
 
 	va_list args;
@@ -577,6 +591,10 @@ SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObjec
 	va_end(args);
 	if (sq_call(v, count + 1, 1, 0))
 	{
+		sq_getlasterror(v);
+		const char* err;
+		sq_getstring(v, -1, &err);
+		Msg("%s\n", err);
 		return ret;
 	}
 	SQObjectType type = sq_gettype(v, -1);

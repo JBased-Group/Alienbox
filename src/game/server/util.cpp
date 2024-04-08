@@ -36,7 +36,7 @@
 #include "datacache/imdlcache.h"
 #include "util.h"
 #include "asw_util_shared.h"
-
+#include "squirrel/squirrel.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -47,6 +47,9 @@ extern int		g_sModelIndexBloodSpray;	// (in combatweapon.cpp) holds the sprite i
 
 // this is true if the engine should be sent log output.  Once per frame it is rechecked to see if logging has been enabled.
 bool g_bIsLogging = true;
+
+#define SQ_CLASSNAME Util
+#include "squirrel/StartLibrary.h"
 
 #ifdef	DEBUG
 void DBG_AssertFunction( bool fExpr, const char *szExpr, const char *szFile, int szLine, const char *szMessage )
@@ -1338,7 +1341,8 @@ void UTIL_SetSize( CBaseEntity *pEnt, const Vector &vecMin, const Vector &vecMax
 //-----------------------------------------------------------------------------
 // Sets the model to be associated with an entity
 //-----------------------------------------------------------------------------
-void UTIL_SetModel( CBaseEntity *pEntity, const char *pModelName )
+#define SQ_FUNCTION() (void,UTIL_SetModel,( CBaseEntity *pEntity, const char *pModelName ))
+#include "squirrel/AddToBindings.h"
 {
 	// check to see if model was properly precached
 	int i = modelinfo->GetModelIndex( pModelName );
@@ -3480,3 +3484,4 @@ static ConCommand collision_test("collision_test", CC_CollisionTest, "Tests coll
 
 
 
+ENDSQFUNCTIONS

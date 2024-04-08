@@ -48,8 +48,8 @@
 #include "tier0/memdbgon.h"
 
 
-#define LIBRARY_NAME C_BaseEntityBindings
-STARTLIBRARY
+#define SQ_CLASSNAME C_BaseEntity
+#include "squirrel/StartLibrary.h"
 
 
 
@@ -1644,7 +1644,8 @@ bool C_BaseEntity::IsCachedRenderBoundsDisabled() const
 	return m_bDisableCachedRenderBounds;
 }
 
-void C_BaseEntity::UpdateVisibility()
+#define SQ_FUNCTION() (void,C_BaseEntity,UpdateVisibility,())
+#include "squirrel/AddToBindings.h"
 {
 #if MAX_SPLITSCREEN_PLAYERS > 1
 	uint32 nPreviousValue = m_VisibilityBits.GetDWord( 0 );
@@ -2002,7 +2003,8 @@ void C_BaseEntity::GetShadowRenderBounds( Vector &mins, Vector &maxs, ShadowType
 // Purpose: Last received origin
 // Output : const float
 //-----------------------------------------------------------------------------
-const Vector& C_BaseEntity::GetAbsOrigin( void ) const
+#define SQ_FUNCTION() (const Vector&,C_BaseEntity,GetAbsOrigin,( void ) const)
+#include "squirrel/AddToBindings.h"
 {
 	Assert( s_bAbsQueriesValid );
 	const_cast<C_BaseEntity*>(this)->CalcAbsolutePosition();
@@ -2014,7 +2016,8 @@ const Vector& C_BaseEntity::GetAbsOrigin( void ) const
 // Purpose: Last received angles
 // Output : const
 //-----------------------------------------------------------------------------
-const QAngle& C_BaseEntity::GetAbsAngles( void ) const
+#define SQ_FUNCTION() (const QAngle&,C_BaseEntity,GetAbsAngles,( void ) const)
+#include "squirrel/AddToBindings.h"
 {
 	Assert( s_bAbsQueriesValid );
 	const_cast<C_BaseEntity*>(this)->CalcAbsolutePosition();
@@ -2063,18 +2066,19 @@ const QAngle& C_BaseEntity::GetNetworkAngles() const
 // Purpose: Get current model pointer for this entity
 // Output : const struct model_s
 //-----------------------------------------------------------------------------
-const model_t *C_BaseEntity::GetModel( void ) const
+#define SQ_FUNCTION() (const model_t*,C_BaseEntity,GetModel,( void ) const)
+#include "squirrel/AddToBindings.h"
 {
 	return model;
 }
-
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Get model index for this entity
 // Output : int - model index
 //-----------------------------------------------------------------------------
-int C_BaseEntity::GetModelIndex( void ) const
+#define SQ_FUNCTION() (int,C_BaseEntity,GetModelIndex,( void ) const)
+#include "squirrel/AddToBindings.h"
 {
 	return m_nModelIndex;
 }
@@ -2083,7 +2087,8 @@ int C_BaseEntity::GetModelIndex( void ) const
 // Purpose: 
 // Input  : index - 
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SetModelIndex( int index )
+#define SQ_FUNCTION() (void,C_BaseEntity,SetModelIndex,( int index ))
+#include "squirrel/AddToBindings.h"
 {
 	m_nModelIndex = index;
 	const model_t *pModel = modelinfo->GetModel( m_nModelIndex );
@@ -3054,7 +3059,8 @@ void C_BaseEntity::SetModelByIndex( int nModelIndex )
 //-----------------------------------------------------------------------------
 // Set model... (NOTE: Should only be used by client-only entities
 //-----------------------------------------------------------------------------
-bool C_BaseEntity::SetModel( const char *pModelName )
+#define SQ_FUNCTION() (bool,C_BaseEntity,SetModel,( const char *pModelName ))
+#include "squirrel/AddToBindings.h"
 {
 	if ( pModelName )
 	{
@@ -3800,6 +3806,12 @@ void C_BaseEntity::RemoveAllDecals( void )
 		CreateModelInstance();
 		modelrender->RemoveAllDecals( m_ModelInstance );
 	}
+}
+
+#define SQ_FUNCTION() (ModelInstanceHandle_t,C_BaseEntity,GetModelInstance,())
+#include "squirrel/AddToBindings.h"
+{
+	return m_ModelInstance;
 }
 
 bool C_BaseEntity::SnatchModelInstance( C_BaseEntity *pToEntity )
@@ -5542,7 +5554,8 @@ void C_BaseEntity::DrawBBoxVisualizations( void )
 //-----------------------------------------------------------------------------
 // Sets the render mode
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SetRenderMode( RenderMode_t nRenderMode, bool bForceUpdate )
+#define SQ_FUNCTION() (void,C_BaseEntity,SetRenderMode,( RenderMode_t nRenderMode, bool bForceUpdate ))
+#include "squirrel/AddToBindings.h"
 {
 	if ( nRenderMode != m_nRenderMode )
 	{
@@ -6469,6 +6482,14 @@ void CC_CL_Find_Ent_Index( const CCommand& args )
 		Msg("Found no entity at %d.\n", iIndex);
 	}
 }
+
+#define SQ_INHERITNAME IClientRenderable
+#include "squirrel/InheritedConvert.h"
+
+
+#define SQ_VARNAME index
+#include "squirrel/MakeGetterSetter.h" // TODO : Make this only a getter
+
 static ConCommand cl_find_ent_index("cl_find_ent_index", CC_CL_Find_Ent_Index, "Display data for clientside entity matching specified index.\nFormat: cl_find_ent_index <index>\n", FCVAR_CHEAT);
 
 SquirrelObject SQC_BaseEntity;
@@ -6483,3 +6504,4 @@ void RegisterC_BaseEntitySquirrelFunctions(SquirrelScript script)
 {
 	g_pSquirrel->RegisterClasses(script, entc);
 }
+

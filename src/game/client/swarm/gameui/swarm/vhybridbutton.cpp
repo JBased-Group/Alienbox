@@ -750,6 +750,7 @@ void BaseModHybridButton::PaintButtonEx()
 
 void BaseModHybridButton::Paint()
 {
+	
 	// bypass ALL of CA's inept broken drawing code
 	// not using VGUI controls, to much draw state is misconfigured by CA to salvage
 	PaintButtonEx();

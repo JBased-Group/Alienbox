@@ -14,6 +14,7 @@ public:
 	DECLARE_DATADESC();
 
 	CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript);
+	virtual void Spawn();
 	virtual void Think();
 	virtual int UpdateTransmitState();
 	SquirrelObject obj;

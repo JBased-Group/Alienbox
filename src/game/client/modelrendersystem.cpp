@@ -8,18 +8,19 @@
 // Fast path model rendering
 //
 //===========================================================================//
-
 #include "cbase.h"
 #include "modelrendersystem.h"
 #include "model_types.h"
 #include "iviewrender.h"
 #include "tier3/tier3.h"
-#include <algorithm>
 #include "tier1/memstack.h"
 #include "engine/ivdebugoverlay.h"
 #include "shaderapi/ishaderapi.h"
 #include "materialsystem/materialsystemutil.h"
 #include "tier0/vprof.h"
+#undef _HAS_CXX17
+#undef _HAS_TR1_NAMESPACE
+#include <algorithm>
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
@@ -118,7 +119,11 @@ private:
 	void ComputeModelLODs( int nModelTypeCount, ModelListByType_t *pModelList, ModelListNode_t *pModelListNode, ModelRenderMode_t renderMode );
 	void SlamModelLODs( int nLOD, int nModelTypeCount, ModelListByType_t *pModelList, ModelListNode_t *pModelListNode );
 	void SortModels( RenderModelInfo_t *pSortedModelListNode, int nModelTypeCount, ModelListByType_t *pModelList, ModelListNode_t *pModelListNode );
-	static bool SortLessFunc( const RenderModelInfo_t &left, const RenderModelInfo_t &right );
+	class RenderModelInfo_tSort
+	{
+	public:
+		static bool Less(const RenderModelInfo_t& left, const RenderModelInfo_t& right, void* YES);
+	};
 	void SetupBones( int nModelTypeCount, ModelListByType_t *pModelList );
 	void SetupFlexes( int nModelTypeCount, ModelListByType_t *pModelList );
 	void ComputeLightingOrigin( ModelListByType_t &list, LightingQuery_t *pLightingQuery, int nQueryStride );
@@ -139,8 +144,12 @@ private:
 	void RenderVCollideDebugOverlay( int nModelTypeCount, ModelListByType_t *pModelList );
 	void RenderBBoxDebugOverlay( int nModelTypeCount, ModelListByType_t *pModelList );
 	int ComputeParentDepth( C_BaseEntity *pEnt );
-	static bool DependencySortLessFunc( const ModelListByType_t &left, const ModelListByType_t &right );
-	static bool StencilSortLessFunc( const ModelListByType_t &left, const ModelListByType_t &right );
+	class ModelListByType_tSort
+	{
+	public:
+		static bool Less(const ModelListByType_t& left, const ModelListByType_t& right, void* YES);
+	};
+	static bool StencilSortLessFunc( const ModelListByType_t &left, const ModelListByType_t &right);
 
 	CMemoryStack m_BoneToWorld;
 	CTextureReference m_DefaultCubemap;
@@ -358,7 +367,7 @@ int CModelRenderSystem::BucketModelsByMDL( ModelListByType_t *pModelList, ModelL
 //-----------------------------------------------------------------------------
 // Sort model types function
 //-----------------------------------------------------------------------------
-inline bool CModelRenderSystem::DependencySortLessFunc( const ModelListByType_t &left, const ModelListByType_t &right )
+inline bool CModelRenderSystem::ModelListByType_tSort::Less( const ModelListByType_t &left, const ModelListByType_t &right, void* YES )
 {
 	// Ensures bone setup occurs in the correct order
 	if ( left.m_nParentDepth != right.m_nParentDepth )
@@ -382,7 +391,9 @@ inline bool CModelRenderSystem::DependencySortLessFunc( const ModelListByType_t 
 //-----------------------------------------------------------------------------
 void CModelRenderSystem::SortBucketsByDependency( int nModelTypeCount, ModelListByType_t *pModelList, LightingList_t *pLightingList )
 {
-	std::sort( pModelList, pModelList + nModelTypeCount, DependencySortLessFunc ); 
+	CUtlSortVector<ModelListByType_t, CModelRenderSystem::ModelListByType_tSort> HELP(pModelList, nModelTypeCount);
+	HELP.RedoSort(true);
+	//std::sort( pModelList, pModelList + nModelTypeCount, DependencySortLessFunc ); 
 
 	// Assign models to the appropriate lighting list
 	for ( int i = nModelTypeCount; --i >= 0; )
@@ -542,11 +553,10 @@ void CModelRenderSystem::ComputeModelLODs( int nModelTypeCount, ModelListByType_
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Sort models function
 //-----------------------------------------------------------------------------
-inline bool CModelRenderSystem::SortLessFunc( const RenderModelInfo_t &left, const RenderModelInfo_t &right )
+inline bool CModelRenderSystem::RenderModelInfo_tSort::Less( const RenderModelInfo_t &left, const RenderModelInfo_t &right, void* pContext)
 {
 	// NOTE: Could do this, but it is not faster, because the cost of an integer multiply is about three
 	// times that of a branch penalty:
@@ -595,7 +605,9 @@ void CModelRenderSystem::SortModels( RenderModelInfo_t *pRenderModelInfo,
 
 		// Sort within this model type. skin first, then LOD, then body.
 		Assert( pCurrInfo - list.m_pRenderModels == list.m_nCount );
-		std::sort( list.m_pRenderModels, list.m_pRenderModels + list.m_nCount, SortLessFunc ); 
+		CUtlSortVector<RenderModelInfo_t, CModelRenderSystem::RenderModelInfo_tSort> HELP(list.m_pRenderModels, list.m_nCount);
+		HELP.RedoSort(true);
+		//std::sort( list.m_pRenderModels, list.m_pRenderModels + list.m_nCount, SortLessFunc ); 
 
 		list.m_nCount -= list.m_nSetupBoneCount;
 		list.m_nSetupBoneCount += list.m_nCount;
@@ -1510,12 +1522,6 @@ void CModelRenderSystem::DrawModels( ModelRenderSystemData_t *pEntities, int nCo
 
 	// Setup per-instance wound data
 	//SetupInfectedWoundRenderData( nModelTypeCount, pModelList, nCount, renderMode );
-
-	if ( IsX360() && ( renderMode == MODEL_RENDER_MODE_NORMAL ) && ( nModelsRenderingStencilCount > 0) )
-	{
-		// resort here to make sure all models rendering stencil come last
-		std::sort( pModelList, pModelList + nModelTypeCount, StencilSortLessFunc );
-	}
 
 	// Draw models
 	RenderModels( &info, nModelTypeCount, pModelList, nCount, renderMode );

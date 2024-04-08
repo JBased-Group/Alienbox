@@ -106,6 +106,7 @@ public:
 	virtual bool GetStackFloat(SquirrelScript script, int i, float* val) = 0;
 	virtual bool GetStackString(SquirrelScript script, int i, const char** val) = 0;
 	virtual bool GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag) = 0;
+	virtual bool GetStackUserPtr(SquirrelScript script, int i, void** val) = 0;
 	virtual void PushInt(SquirrelScript script, int val) = 0;
 	virtual void PushFloat(SquirrelScript script, float val) = 0;
 	virtual void PushString(SquirrelScript script, const char* val) = 0;
@@ -119,7 +120,51 @@ public:
 	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset) = 0;
 };
 
+#define TEMPORARY_TO_CPP(type) \
+template <> \
+bool ConvertToCpp<type>(SquirrelScript script, type* valOut, int a) \
+{ \
+	extern ISquirrel* g_pSquirrel; \
+	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<type>::id()); \
+}
 
+#define TEMPORARY_FROM_CPP(type) \
+template <> \
+bool ConvertFromCpp<type>(SquirrelScript script, type valIn) \
+{ \
+	extern ISquirrel* g_pSquirrel; \
+	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<type>::id()); \
+	return true;\
+}
+
+
+struct SQBINDING;
+extern SQBINDING* sq_bindings;
+
+
+struct SQBINDING
+{
+	SQBINDING(SquirrelFunctionDecl* func, SquirrelClassDecl* cls)
+	{
+		next = sq_bindings;
+		sq_bindings = this;
+		funcdcl = func;
+		classdcl = cls;
+	}
+	SQBINDING* next = 0;
+	SquirrelFunctionDecl* funcdcl = 0;
+	SquirrelClassDecl* classdcl = 0;
+};
+
+
+#define ENDSQCLASS \
+SquirrelObject CONCAT(SQ_CLASSNAME, _classobj); \
+SquirrelClassDecl CONCAT(SQ_CLASSNAME, _classdecl)[] = { STRINGG(SQ_CLASSNAME),(SquirrelFunctionDecl*)(CONCAT(LIBRARY_NAME, COUNTER_B).Data), &CONCAT(SQ_CLASSNAME, _classobj), TypeIdentifier<SQ_CLASSNAME*>::id(), nullptr, nullptr, nullptr, nullptr }; \
+static SQBINDING CONCAT(SQ_CLASSNAME, _sqbinding)((SquirrelFunctionDecl*)0, (SquirrelClassDecl*)CONCAT(SQ_CLASSNAME, _classdecl));
+
+
+#define ENDSQFUNCTIONS \
+static SQBINDING CONCAT(LIBRARY_NAME, _sqbinding)((SquirrelFunctionDecl*)(CONCAT(LIBRARY_NAME, COUNTER_B).Data), (SquirrelClassDecl*)0);
 
 
 template <typename Type>
@@ -133,6 +178,20 @@ constexpr bool IsPointer<Type* const> = true;
 
 template <typename Type>
 constexpr bool IsPointer<Type&> = true;
+
+
+
+template <typename Type>
+struct UnRef
+{
+	using Ptr = Type;
+};
+
+template <typename Type>
+struct UnRef<Type&>
+{
+	using Ptr = Type*;
+};
 
 
 
@@ -177,14 +236,14 @@ constexpr const char GetType()
 }
 
 typedef bool (*GenericConverterToCpp)(SquirrelScript, void**, int);
-typedef bool (*GenericConverterFromCpp)(SquirrelScript, void*);
+typedef bool (*GenericConverterFromCpp)(SquirrelScript, const void*);
 
 template <unsigned int Size>
 struct ReturnableString
 {
 	char Data[Size];
 	const int* TypeNames[Size];
-	void* ConvertCpp[Size];
+	const void* ConvertCpp[Size];
 
 	operator char* () const
 	{
@@ -247,6 +306,9 @@ constexpr ReturnableString<Size> operator +(ReturnableString<Size> Left, void* T
 template <typename Type>
 bool ConvertToCpp(SquirrelScript script, Type* valOut, int a);
 
+template <typename Type>
+bool ConvertFromCpp(SquirrelScript script, Type valIn);
+
 
 // Thanks https://stackoverflow.com/a/77093313
 template <class C>
@@ -259,7 +321,10 @@ struct TypeIdentifier {
 	{
 		return (GenericConverterToCpp)(::ConvertToCpp<C>);
 	}
-	static bool ConvertFromCpp(SquirrelScript script, C val);
+	static const GenericConverterFromCpp ConvertFromCpp()
+	{
+		return (GenericConverterFromCpp)(::ConvertFromCpp<C>);
+	}
 };
 
 template <class C>
@@ -272,7 +337,10 @@ struct TypeIdentifier<C&>
 	{
 		return (GenericConverterToCpp)(::ConvertToCpp<C*>);
 	}
-	static bool ConvertFromCpp(SquirrelScript script, C* val);
+	static const GenericConverterFromCpp ConvertFromCpp()
+	{
+		return (GenericConverterFromCpp)(::ConvertFromCpp<C*>);
+	}
 };
 
 template <class C>
@@ -285,7 +353,10 @@ struct TypeIdentifier<const C*>
 	{
 		return (GenericConverterToCpp)(::ConvertToCpp<C*>);
 	}
-	static bool ConvertFromCpp(SquirrelScript script, C* val);
+	static const GenericConverterFromCpp ConvertFromCpp()
+	{
+		return (GenericConverterFromCpp)(::ConvertFromCpp<C*>);
+	}
 };
 
 template <class C>
@@ -298,7 +369,10 @@ struct TypeIdentifier<const C&>
 	{
 		return (GenericConverterToCpp)(::ConvertToCpp<C*>);
 	}
-	static bool ConvertFromCpp(SquirrelScript script, C* val);
+	static const GenericConverterFromCpp ConvertFromCpp()
+	{
+		return (GenericConverterFromCpp)(::ConvertFromCpp<C*>);
+	}
 };
 
 template <typename Class_Name, typename Return_Type, typename... Argument_Types>
@@ -307,10 +381,10 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 	constexpr unsigned int Size = sizeof...(Argument_Types) + 2;
 	ReturnableString<Size> Ret{};
 	Ret.Data[0] = GetType<Return_Type>();
-	if constexpr (!Same<Return_Type, void>)
+	if constexpr (IsPointer<Return_Type>)
 	{
 		Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
-		Ret.ConvertCpp[0] = (void*)TypeIdentifier<Return_Type>::ConvertToCpp;
+		Ret.ConvertCpp[0] = (const void*)TypeIdentifier<Return_Type>::ConvertFromCpp;
 	}
 	else
 	{
@@ -331,10 +405,10 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 	constexpr unsigned int Size = sizeof...(Argument_Types) + 2;
 	ReturnableString<Size> Ret{};
 	Ret.Data[0] = GetType<Return_Type>();
-	if constexpr (!Same<Return_Type, void>)
+	if constexpr (IsPointer<Return_Type>)
 	{
 		Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
-		Ret.ConvertCpp[0] = (void*)TypeIdentifier<Return_Type>::ConvertToCpp;
+		Ret.ConvertCpp[0] = (const void*)TypeIdentifier<Return_Type>::ConvertFromCpp;
 	}
 	else
 	{
@@ -353,15 +427,15 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 	constexpr unsigned int Size = sizeof...(Argument_Types) + 2;
 	ReturnableString<Size> Ret{};
 	Ret.Data[0] = GetType<Return_Type>();
-	if constexpr (!Same<Return_Type, void>)
+	if constexpr (IsPointer<Return_Type>)
 	{
 		Ret.TypeNames[0] = TypeIdentifier<Return_Type>::id();
-		Ret.ConvertCpp[0] = (void*)TypeIdentifier<Return_Type>::ConvertToCpp;
+		Ret.ConvertCpp[0] = (const void*)TypeIdentifier<Return_Type>::ConvertFromCpp;
 	}
 	else
 	{
 		Ret.TypeNames[0] = TypeIdentifier<void*>::id();
-		Ret.ConvertCpp[0] = (void*)TypeIdentifier<int>::ConvertToCpp;
+		Ret.ConvertCpp[0] = (void*)TypeIdentifier<int>::ConvertToCpp; // literally whatever, does not matter
 	}
 	((Ret = Ret + GetType<Argument_Types>()), ...);
 	((Ret = Ret + TypeIdentifier<Argument_Types>::id()), ...);
@@ -462,30 +536,29 @@ constexpr ListOfStuff<Count + 1> Append(ListOfStuff<Count> List, SquirrelFunctio
 #define SQ_FUNCTION_DECLFUNC_PROXY(a,b,c,...) SQ_CHECK((Hi SQ_HASPARENS c Hi ,a b c;, ))
 #define SQ_FUNCTION_DECLFUNC(a) SQ_FUNCTION_DECLFUNC_PROXY a
 
-#define STARTLIBRARY constexpr ListOfStuff<COUNTER_A> CONCAT(LIBRARY_NAME,COUNTER_B) = { 0,0 };
 
 
 
 template <>
-static inline bool ConvertToCpp<float>(SquirrelScript script, float* valOut, int a)
+inline bool ConvertToCpp<float>(SquirrelScript script, float* valOut, int a)
 {
 	return true;
 }
 
 template <>
-static inline bool ConvertToCpp<int>(SquirrelScript script, int* valOut, int a)
+inline bool ConvertToCpp<int>(SquirrelScript script, int* valOut, int a)
 {
 	return true;
 }
 
 template <>
-static inline bool ConvertToCpp<char*>(SquirrelScript script, char** valOut, int a)
+inline bool ConvertToCpp<char*>(SquirrelScript script, char** valOut, int a)
 {
 	return true;
 }
 
 template <>
-static inline bool ConvertToCpp<bool>(SquirrelScript script, bool* valOut, int a)
+inline bool ConvertToCpp<bool>(SquirrelScript script, bool* valOut, int a)
 {
 	return true;
 }

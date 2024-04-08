@@ -1265,7 +1265,7 @@ public:
 #endif
 
 	// Gets the model instance + shadow handle
-	virtual ModelInstanceHandle_t GetModelInstance() { return m_ModelInstance; }
+	virtual ModelInstanceHandle_t GetModelInstance();
 	void SetModelInstance( ModelInstanceHandle_t hInstance) { m_ModelInstance = hInstance; }
 	bool SnatchModelInstance( C_BaseEntity * pToEntity );
 	virtual ClientShadowHandle_t GetShadowHandle() const	{ return m_ShadowHandle; }
