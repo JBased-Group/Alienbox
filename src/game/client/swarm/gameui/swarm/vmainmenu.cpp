@@ -329,33 +329,8 @@ void MainMenu::Activate()
 
 void MainMenu::LoadLayout()
 {
-	const char *pSettings = "Resource/UI/BaseModUI/MainMenu.res";
+	const char *pSettings = "Resource/UI/BaseModUI/MainMenuABox.res";
 	m_bIsLegacy = false;
-
-	if ( !V_strcmp( rd_legacy_ui.GetString(), "2004" ) || !V_strcmp( rd_legacy_ui.GetString(), "2010" ) || !V_strcmp( rd_legacy_ui.GetString(), "2017" ) )
-	{
-		pSettings = "Resource/UI/BaseModUI/MainMenuLegacy.res";
-		m_bIsLegacy = true;
-	}
-
-	if ( CommandLine()->FindParm( "-teststeamapiloadfail" ) || !g_pMatchFramework || !g_pMatchFramework->GetMatchSystem() || !g_pMatchFramework->GetMatchSystem()->GetPlayerManager() || !g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer(0) || !SteamApps() || !SteamFriends() || !SteamHTTP() || !SteamInput() || !SteamMatchmaking() || !SteamMatchmakingServers() || !SteamRemoteStorage() || !SteamUGC() || !SteamUser() || !SteamUserStats() || !SteamUtils())
-	{
-		pSettings = "Resource/UI/BaseModUI/MainMenuStub.res";
-		m_bIsStub = true;
-
-		for ( int i = GetChildCount() - 1; i >= 0; i-- )
-		{
-			// Clean up all UI elements we made in the constructor
-			vgui::Panel *pChild = GetChild( i );
-			if ( pChild && V_stricmp( pChild->GetName(), "BtnStub" ) && V_stricmp( pChild->GetName(), "BtnQuit" ) )
-			{
-				pChild->SetVisible( false );
-			}
-		}
-
-		// go ahead and just click the button to ask for help on behalf of the user.
-		PostMessage( this, new KeyValues( "Command", "command", "BtnStub" ), 0.5f );
-	}
 
 	V_strncpy( m_ResourceName, pSettings, sizeof( m_ResourceName ) );
 
@@ -375,73 +350,6 @@ void MainMenu::ApplySchemeSettings( IScheme *pScheme )
 	BaseClass::ApplySchemeSettings( pScheme );
 
 	BaseModHybridButton *button = dynamic_cast< BaseModHybridButton* >( FindChildByName( "BtnPlaySolo" ) );
-	if ( button )
-	{
-#ifdef _X360
-		button->SetText( ( XBX_GetNumGameUsers() > 1 ) ? ( "#L4D360UI_MainMenu_PlaySplitscreen" ) : ( "#L4D360UI_MainMenu_PlaySolo" ) );
-		button->SetHelpText( ( XBX_GetNumGameUsers() > 1 ) ? ( "#L4D360UI_MainMenu_OfflineCoOp_Tip" ) : ( "#L4D360UI_MainMenu_PlaySolo_Tip" ) );
-#endif
-	}
-
-#ifdef _X360
-	if ( !XBX_GetPrimaryUserIsGuest() )
-	{
-		wchar_t wszListText[ 128 ];
-		wchar_t wszPlayerName[ 128 ];
-
-		IPlayer *player1 = NULL;
-		if ( XBX_GetNumGameUsers() > 0 )
-		{
-			player1 = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetUserId( 0 ) );
-		}
-
-		IPlayer *player2 = NULL;
-		if ( XBX_GetNumGameUsers() > 1 )
-		{
-			player2 = g_pMatchFramework->GetMatchSystem()->GetPlayerManager()->GetLocalPlayer( XBX_GetUserId( 1 ) );
-		}
-
-		if ( player1 )
-		{
-			Label *pLblPlayer1GamerTag = dynamic_cast< Label* >( FindChildByName( "LblPlayer1GamerTag" ) );
-			if ( pLblPlayer1GamerTag )
-			{
-				g_pVGuiLocalize->ConvertANSIToUnicode( player1->GetName(), wszPlayerName, sizeof( wszPlayerName ) );
-				g_pVGuiLocalize->ConstructString( wszListText, sizeof( wszListText ), g_pVGuiLocalize->Find( "#L4D360UI_MainMenu_LocalProfilePlayer1" ), 1, wszPlayerName );
-
-				pLblPlayer1GamerTag->SetVisible( true );
-				pLblPlayer1GamerTag->SetText( wszListText );
-			}
-		}
-
-		if ( player2 )
-		{
-			Label *pLblPlayer2GamerTag = dynamic_cast< Label* >( FindChildByName( "LblPlayer2GamerTag" ) );
-			if ( pLblPlayer2GamerTag )
-			{
-				g_pVGuiLocalize->ConvertANSIToUnicode( player2->GetName(), wszPlayerName, sizeof( wszPlayerName ) );
-				g_pVGuiLocalize->ConstructString( wszListText, sizeof( wszListText ), g_pVGuiLocalize->Find( "#L4D360UI_MainMenu_LocalProfilePlayer2" ), 1, wszPlayerName );
-
-				pLblPlayer2GamerTag->SetVisible( true );
-				pLblPlayer2GamerTag->SetText( wszListText );
-
-				// in split screen, have player2 gamer tag instead of enable, and disable
-				SetControlVisible( "LblPlayer2DisableIcon", true );
-				SetControlVisible( "LblPlayer2Disable", true );
-				SetControlVisible( "LblPlayer2Enable", false );
-			}
-		}
-		else
-		{
-			SetControlVisible( "LblPlayer2DisableIcon", false );
-			SetControlVisible( "LblPlayer2Disable", false );
-
-			// not in split screen, no player2 gamertag, instead have enable
-			SetControlVisible( "LblPlayer2GamerTag", false );
-			SetControlVisible( "LblPlayer2Enable", true );
-		}
-	}
-#endif
 
 	if ( IsPC() )
 	{
