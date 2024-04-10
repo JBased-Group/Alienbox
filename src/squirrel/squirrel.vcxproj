@@ -85,7 +85,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;ws2_32.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;ws2_32.lib;legacy_stdio_definitions.lib;..\lib\public\tier1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if exist "..\..\..\alienbox\bin\." goto ValveStart
@@ -148,6 +148,9 @@ copy "$(TargetDir)"$(TargetFileName) "..\..\alienbox\bin\.\$(TargetFileName)"</C
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\public\dt_recv.cpp" />
+    <ClCompile Include="..\public\dt_send.cpp" />
+    <ClCompile Include="..\public\dt_utlvector_common.cpp" />
     <ClCompile Include="sqapi.cpp" />
     <ClCompile Include="sqbaselib.cpp" />
     <ClCompile Include="sqclass.cpp" />
@@ -166,6 +169,11 @@ copy "$(TargetDir)"$(TargetFileName) "..\..\alienbox\bin\.\$(TargetFileName)"</C
     <ClCompile Include="sqvm.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\public\squirrel\AddConstructor.h" />
+    <ClInclude Include="..\public\squirrel\AddInterfaceBinding.h" />
+    <ClInclude Include="..\public\squirrel\InheritedConvert.h" />
+    <ClInclude Include="..\public\squirrel\MakeGetterSetter.h" />
+    <ClInclude Include="..\public\squirrel\StartLibrary.h" />
     <ClInclude Include="sqarray.h" />
     <ClInclude Include="sqclass.h" />
     <ClInclude Include="sqclosure.h" />
