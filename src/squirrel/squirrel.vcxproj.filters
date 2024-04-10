@@ -63,6 +63,15 @@
     <ClCompile Include="sqvm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\public\dt_send.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\dt_recv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\dt_utlvector_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sqarray.h">
@@ -135,6 +144,21 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="sqvm.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\squirrel\MakeGetterSetter.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\squirrel\StartLibrary.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\squirrel\InheritedConvert.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\squirrel\AddInterfaceBinding.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\squirrel\AddConstructor.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
