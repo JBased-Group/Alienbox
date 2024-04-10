@@ -1766,12 +1766,15 @@ C_BaseAnimating* C_BasePlayer::GetRenderedWeaponModel()
 //-----------------------------------------------------------------------------
 C_BasePlayer *C_BasePlayer::GetLocalPlayer( int nSlot /*= -1*/ )
 {
+	return (C_BasePlayer*)ClientEntityList().GetEnt(engine->GetLocalPlayer());
+	/*
 	if ( nSlot == -1 )
 	{
 //		ASSERT_LOCAL_PLAYER_RESOLVABLE();
 		return s_pLocalPlayer[ GET_ACTIVE_SPLITSCREEN_SLOT() ];
 	}
 	return s_pLocalPlayer[ nSlot ];
+	*/
 }
 
 void C_BasePlayer::SetRemoteSplitScreenPlayerViewsAreLocalPlayer( bool bSet )

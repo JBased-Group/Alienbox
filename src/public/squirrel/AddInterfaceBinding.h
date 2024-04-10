@@ -2,7 +2,12 @@
 #undef SQ_INTERFACE
 #define SQ_INTERFACE() (void,SQ_FUNCTION(),())
 
+
+#ifndef SQ_OVERRIDE
 static constexpr auto CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG) = GetSignature(&SQ_FUNCTION_CLSNAME(SQ_INTERFACE()));
+#else
+static constexpr auto CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG) = CONCAT(GetSignature,SQ_OVERRIDE)(&SQ_FUNCTION_CLSNAME(SQ_INTERFACE()));
+#endif
 
 #define GetStackArg(a) \
 if constexpr (count > a) \
@@ -274,18 +279,23 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_INTERFACE())(SquirrelScript script)
 {
 	extern ISquirrel* g_pSquirrel;
 	static constexpr unsigned int count = sizeof(CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)).Data - 1;
+#ifdef SQ_OVERRIDE
+	constexpr auto func = CONCAT(GetOverloadedFunction,SQ_OVERRIDE)(&SQ_FUNCTION_CLSNAME(SQ_INTERFACE()));
+#else
 	constexpr auto func = &SQ_FUNCTION_CLSNAME(SQ_INTERFACE());
+#endif
+
 	if constexpr (Same<Class_Name, void>)
 	{
 		if constexpr (count == 1)
 		{
 			if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'v')
 			{
-				func();
+				SQ_FUNCTION_CLSNAME(SQ_INTERFACE())();
 			}
 			else
 			{
-				auto returnvar = func();
+				auto returnvar = SQ_FUNCTION_CLSNAME(SQ_INTERFACE())();
 				ReturnToStack()
 					return 1;
 			}
@@ -307,7 +317,12 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_INTERFACE())(SquirrelScript script)
 				GetStackArg(11)
 				GetStackArg(12)
 
-				if constexpr (IsCDecl(func, func))
+				
+#ifdef SQ_OVERRIDE
+				if constexpr (CONCAT(IsCDecl,SQ_OVERRIDE)(SQ_FUNCTION_CLSNAME(SQ_INTERFACE())))
+#else
+				if constexpr (IsCDecl(SQ_FUNCTION_CLSNAME(SQ_INTERFACE())))
+#endif
 				{
 					CallWithConvNoObj(__cdecl)
 				}
@@ -319,8 +334,16 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_INTERFACE())(SquirrelScript script)
 	}
 	else
 	{
+		
 		SQ_FUNCTION_CLS(SQ_INTERFACE())* obj;
-		g_pSquirrel->GetStackObjectUserdata(script, (void**)&obj);
+		if (!g_pSquirrel->GetStackObjectUserdata(script, (void**)&obj)) // TODO : fuck with this later
+		{
+			if (!g_pSquirrel->GetStackUserData(script, 1, (void**)&obj, TypeIdentifier<SQ_FUNCTION_CLS(SQ_INTERFACE())*>::id()))
+			{
+				return 0;
+			}
+			*(void**)&obj = *(void**)obj;
+		}
 		if constexpr (count == 1)
 		{
 			if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[0] == 'v')
@@ -381,9 +404,14 @@ constexpr auto SQ_FUNCTION_CLS_NAME_EXPAND(SQ_INTERFACE())(Return_Type(*)(Argume
 	return &SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_INTERFACE()) < void, Return_Type > ;
 }
 
+#ifndef SQ_OVERRIDE
 constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), (SQ_FUNCTION_CLS_NAME_EXPAND(SQ_INTERFACE())(&SQ_FUNCTION_CLSNAME(SQ_INTERFACE()))), STRINGG(SQ_FUNCTION_NAME(SQ_INTERFACE())));
+#else
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), (CONCAT(SQ_FUNCTION_CLS_NAME_EXPAND(SQ_INTERFACE()), SQ_OVERRIDE)(&SQ_FUNCTION_CLSNAME(SQ_INTERFACE()))), STRINGG(SQ_FUNCTION_NAME(SQ_INTERFACE())));
+#endif
+
 #include INCREMENT_COUNTER_A
 #include INCREMENT_COUNTER_B
 
-
+#undef SQ_OVERRIDE
 #undef SQ_FUNCTION

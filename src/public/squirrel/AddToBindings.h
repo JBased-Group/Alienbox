@@ -25,6 +25,11 @@ if constexpr (count > a) \
 		if(!((GenericConverterToCpp)(((void* (*)())CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG).ConvertCpp[a])()))(script,&argi[a-1].v_p, a + 1)) \
 			return 0; \
 	} \
+	else \
+	{ \
+		if (!g_pSquirrel->GetStackInt(script, a + 1, &argi[a - 1].v_i)) \
+			return 0; \
+	} \
 }
 
 #define ReturnToStack() \
@@ -327,7 +332,15 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION())(SquirrelScript script)
 			}
 			else
 			{
-				UnRef<Return_Type>::Ptr returnvar = (obj->*((UnRef<Return_Type>::Ptr(__thiscall Class_Name::*)())func))();
+				UnRef<Return_Type>::Ptr returnvar;
+				if constexpr (IsRef<Return_Type>)
+				{
+					returnvar = &(obj->SQ_FUNCTION_NAME(SQ_FUNCTION()))();
+				}
+				else
+				{
+					returnvar = (obj->SQ_FUNCTION_NAME(SQ_FUNCTION()))();
+				}
 				ReturnToStack()
 				return 1;
 			}

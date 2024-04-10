@@ -34,6 +34,7 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+#include <c_squirrel_entity.h>
 
 #define DETAIL_SPRITE_MATERIAL		"detail/detailsprites"
 
@@ -2844,8 +2845,8 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const DistanceFa
 //-----------------------------------------------------------------------------
 float CDetailObjectSystem::ComputeDetailFadeInfo( DistanceFadeInfo_t *pInfo )
 {
-	C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
-	float flFactor = pLocal ? pLocal->GetFOVDistanceAdjustFactor() : 1.0f;
+	C_SquirrelEntity* pLocal = (C_SquirrelEntity*)C_BasePlayer::GetLocalPlayer();
+	float flFactor = /*pLocal ? pLocal->GetFOVDistanceAdjustFactor() : */1.0f;
 	float flDetailDist = m_flDetailFadeEnd / flFactor;
 	pInfo->m_flMaxDistSqr = flDetailDist * flDetailDist;
 	pInfo->m_flMinDistSqr = m_flDetailFadeStart / flFactor;

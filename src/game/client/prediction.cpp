@@ -20,7 +20,7 @@
 #include "con_nprint.h"
 #include "hud_pdump.h"
 #include "datacache/imdlcache.h"
-
+#include "c_squirrel_entity.h"
 #ifdef HL2_CLIENT_DLL
 #include "c_basehlplayer.h"
 #endif
@@ -1917,11 +1917,11 @@ void CPrediction::GetLocalViewAngles( QAngle& ang )
 //-----------------------------------------------------------------------------
 void CPrediction::SetLocalViewAngles( QAngle& ang )
 {
-	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	C_SquirrelEntity *player = (C_SquirrelEntity*)C_BasePlayer::GetLocalPlayer();
 	if ( !player )
 		return;
 
-	player->SetLocalViewAngles( ang );
+	//player->SetLocalViewAngles( ang );
 }
 
 #if !defined( NO_ENTITY_PREDICTION )

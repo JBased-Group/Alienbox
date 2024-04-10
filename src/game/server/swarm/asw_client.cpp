@@ -25,7 +25,7 @@
 #include "engine/IEngineSound.h"
 #include "game_timescale_shared.h"
 #include "tier0/vprof.h"
-#include "abox_player.h"
+#include "squirrel_entity.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -50,21 +50,23 @@ called each time a player is spawned into the game
 void ClientPutInServer( edict_t *pEdict, const char *playername )
 {
 	// Allocate a CBasePlayer for pev, and call spawn
-	CABox_Player *pPlayer = CABox_Player::CreatePlayer( "player", pEdict );
-	pPlayer->SetPlayerName( playername );
+	extern edict_t* g_pForceAttachEdict;
+	g_pForceAttachEdict = pEdict;
+	CSquirrelEntity* pPlayer = (CSquirrelEntity*)CreateEntityByName("player");
+	//pPlayer->SetPlayerName( playername );
 
 	// Send the current (or next) timescale
-	CSingleUserRecipientFilter filter( pPlayer );
-	filter.MakeReliable();
-	UserMessageBegin( filter, "CurrentTimescale" );
-	WRITE_FLOAT( GameTimescale()->GetDesiredTimescale() );
-	MessageEnd();
+	//CSingleUserRecipientFilter filter( pPlayer );
+	//filter.MakeReliable();
+	//UserMessageBegin( filter, "CurrentTimescale" );
+	//WRITE_FLOAT( GameTimescale()->GetDesiredTimescale() );
+	//MessageEnd();
 }
 
 
 void ClientActive( edict_t *pEdict, bool bLoadGame )
 {
-	CABox_Player *pPlayer = ToABox_Player( CBaseEntity::Instance( pEdict ) );
+	CSquirrelEntity* pPlayer = ToSquirrelPlayer( CBaseEntity::Instance( pEdict ) );
 	Assert( pPlayer );
 
 	if ( !pPlayer )
@@ -72,7 +74,7 @@ void ClientActive( edict_t *pEdict, bool bLoadGame )
 		return;
 	}
 
-	pPlayer->InitialSpawn();
+	pPlayer->CallFunction<void>("InitialSpawn");
 
 	if ( !bLoadGame )
 	{

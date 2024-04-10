@@ -24,15 +24,15 @@ bool DesiredApp(int appid)
 void PatchSearchPath(KeyValues* keyv, const char* find, const char* basepath)
 {
 	char replace[MAX_PATH];
-	strncpy_s(replace, basepath, MAX_PATH);
-	strncat_s(replace, find, MAX_PATH);
-	int findlen = strlen(find);
+	V_strncpy(replace, basepath, MAX_PATH);
+	V_strncat(replace, find, MAX_PATH);
+	int findlen = V_strlen(find);
 	for (KeyValues* value = keyv->GetFirstValue(); value; value = value->GetNextValue())
 	{
 		const char* str = value->GetString();
 		if (!str)
 			continue;
-		int len = strlen(str);
+		int len = V_strlen(str);
 		if (len >= findlen && strncmp(str + len - findlen, find, findlen) == 0)
 		{
 			value->SetStringValue(replace);
@@ -53,7 +53,7 @@ KeyValues* GetKeyvaluesFromFile(const char* dir, const char* name)
 	fseek(fp, 0L, SEEK_END);
 	int sz = ftell(fp);
 	char* fileRead = (char*)g_pMemAlloc->IndirectAlloc(sz + 2);
-	memset(fileRead, 0, sz + 1);
+	V_memset(fileRead, 0, sz + 1);
 	rewind(fp);
 	fread((void*)fileRead, 1, sz, fp);
 	fileRead[sz] = '\x00';
@@ -67,34 +67,34 @@ KeyValues* GetKeyvaluesFromFile(const char* dir, const char* name)
 void GetAppManifest(const char* appid, const char* path)
 {
 	char manifestDir[MAX_PATH];
-	strncpy(manifestDir, path, MAX_PATH);
+	V_strncpy(manifestDir, path, MAX_PATH);
 	V_AppendSlash(manifestDir, MAX_PATH);
-	strncat(manifestDir, "steamapps", MAX_PATH);
+	V_strncat(manifestDir, "steamapps", MAX_PATH);
 	V_AppendSlash(manifestDir, MAX_PATH);
-	strncat(manifestDir, "appmanifest_", MAX_PATH);
-	strncat(manifestDir, appid, MAX_PATH);
-	strncat(manifestDir, ".acf", MAX_PATH);
+	V_strncat(manifestDir, "appmanifest_", MAX_PATH);
+	V_strncat(manifestDir, appid, MAX_PATH);
+	V_strncat(manifestDir, ".acf", MAX_PATH);
 	KeyValues* appmanifest = GetKeyvaluesFromFile(manifestDir, "AppState");
 	const char* installDir = appmanifest->GetString("installdir");
 	char appDir[MAX_PATH];
-	strncpy(appDir, path, MAX_PATH);
+	V_strncpy(appDir, path, MAX_PATH);
 	V_AppendSlash(appDir, MAX_PATH);
-	strncat(appDir, "steamapps", MAX_PATH);
+	V_strncat(appDir, "steamapps", MAX_PATH);
 	V_AppendSlash(appDir, MAX_PATH);
-	strncat(appDir, "common", MAX_PATH);
+	V_strncat(appDir, "common", MAX_PATH);
 	V_AppendSlash(appDir, MAX_PATH);
-	strncat(appDir, installDir, MAX_PATH);
+	V_strncat(appDir, installDir, MAX_PATH);
 	V_AppendSlash(appDir, MAX_PATH);
 
 	V_FixSlashes(appDir, '\\');
 	V_FixDoubleSlashes(appDir);
 
 	char gameinfoDir[MAX_PATH];
-	strncpy(gameinfoDir, g_szBasedir, MAX_PATH);
+	V_strncpy(gameinfoDir, g_szBasedir, MAX_PATH);
 	V_AppendSlash(gameinfoDir, MAX_PATH);
-	strncat(gameinfoDir, "alienbox", MAX_PATH);
+	V_strncat(gameinfoDir, "alienbox", MAX_PATH);
 	V_AppendSlash(gameinfoDir, MAX_PATH);
-	strncat(gameinfoDir, "gameinfo.txt", MAX_PATH);
+	V_strncat(gameinfoDir, "gameinfo.txt", MAX_PATH);
 	KeyValues* gameinfo = GetKeyvaluesFromFile(gameinfoDir, "GameInfo");
 	KeyValues* searchpaths = gameinfo->FindKey("FileSystem", true)->FindKey("SearchPaths", true);
 
@@ -169,8 +169,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	RegGetValueA(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath", RRF_RT_REG_SZ, NULL, (PVOID)&steamDir, &BufferSize);
 	if (!steamDir)
 		return 1;
-	strncpy(steamLibraryFolders, steamDir, MAX_PATH);
-	strncat(steamLibraryFolders, "\\steamapps\\libraryfolders.vdf", MAX_PATH);
+	V_strncpy(steamLibraryFolders, steamDir, MAX_PATH);
+	V_strncat(steamLibraryFolders, "\\steamapps\\libraryfolders.vdf", MAX_PATH);
 	KeyValues* libraryfolders = GetKeyvaluesFromFile(steamLibraryFolders, "libraryfolders");
 	char aswrddir[MAX_PATH] = "";
 	for (KeyValues* folder = libraryfolders->GetFirstTrueSubKey(); folder; folder = folder->GetNextTrueSubKey())
@@ -186,8 +186,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			}
 			if (Q_atoi(appid) == 563560)
 			{
-				strncpy(aswrddir, folder->GetString("path"), MAX_PATH);
-				strncat(aswrddir, "\\steamapps\\common\\Alien Swarm Reactive Drop\\reactivedrop.exe", MAX_PATH);
+				V_strncpy(aswrddir, folder->GetString("path"), MAX_PATH);
+				V_strncat(aswrddir, "\\steamapps\\common\\Alien Swarm Reactive Drop\\reactivedrop.exe", MAX_PATH);
 			}
 		}
 	}
@@ -197,11 +197,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		MessageBoxA(0, "Install Alien Swarm Reactive Drop to play this.", "Launcher error", MB_OK);
 	}
 	char gameParam[1024];
-	strncpy(gameParam, "-steam -game \"", 1024);
-	strncat(gameParam, g_szBasedir, 1024);
+	V_strncpy(gameParam, "-steam -game \"", 1024);
+	V_strncat(gameParam, g_szBasedir, 1024);
 	V_AppendSlash(gameParam, 1024);
-	strncat(gameParam, "alienbox\" ", 1024);
-	strncat(gameParam, lpCmdLine, 1024);
+	V_strncat(gameParam, "alienbox\" ", 1024);
+	V_strncat(gameParam, lpCmdLine, 1024);
 
 	ShellExecuteA(0, "open", aswrddir, gameParam, steamDir, SW_SHOWDEFAULT);
 	return 0;

@@ -1977,12 +1977,12 @@ void CClientLeafSystem::ComputeDistanceFade( int nCount, AlphaInfo_t *pAlphaInfo
 	// Distance fade computations
 	float flDistFactorSq = 1.0f;
 	Vector vecViewOrigin = CurrentViewOrigin();
-	C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
-	if ( pLocal )
-	{
-		flDistFactorSq = pLocal->GetFOVDistanceAdjustFactor();
-		flDistFactorSq *= flDistFactorSq;
-	}
+	//C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+	//if ( pLocal )
+	//{
+//		flDistFactorSq = pLocal->GetFOVDistanceAdjustFactor();
+	//	flDistFactorSq *= flDistFactorSq;
+	//}
 
 	for ( int i = 0; i < nCount; ++i )
 	{

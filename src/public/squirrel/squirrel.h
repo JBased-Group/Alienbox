@@ -81,6 +81,13 @@ struct SquirrelClassDecl
 	const int* typetag;
 };
 
+struct SquirrelDelegateDecl
+{
+	const char* name;
+	const SquirrelFunctionDecl* funcs;
+	SquirrelObject* delegateobj;
+};
+
 typedef void (*SquirrelRegisterFunction)(SquirrelScript);
 
 class ISquirrel
@@ -106,18 +113,25 @@ public:
 	virtual bool GetStackFloat(SquirrelScript script, int i, float* val) = 0;
 	virtual bool GetStackString(SquirrelScript script, int i, const char** val) = 0;
 	virtual bool GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag) = 0;
+	virtual bool GetStackUserData(SquirrelScript script, int i, void** val, const int* typetag) = 0;
 	virtual bool GetStackUserPtr(SquirrelScript script, int i, void** val) = 0;
 	virtual void PushInt(SquirrelScript script, int val) = 0;
 	virtual void PushFloat(SquirrelScript script, float val) = 0;
 	virtual void PushString(SquirrelScript script, const char* val) = 0;
-	virtual void PushPtr(SquirrelScript script, void* val, const int* typetag) = 0;
+	virtual SquirrelObject PushPtr(SquirrelScript script, void* val, const int* typetag) = 0;
 	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr) = 0;
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes) = 0;
 	virtual bool SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype) = 0;
 	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var) = 0;
 	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap) = 0;
-	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset) = 0;
-	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset) = 0;
+	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset, const char* name) = 0;
+	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset, const char* name) = 0;
+	virtual void SetDelegate(SquirrelScript script, SquirrelObject obj) = 0;
+	virtual void RegisterDelegates(SquirrelScript script, SquirrelDelegateDecl* classes) = 0;
+	virtual void Pop(SquirrelScript script) = 0;
+	virtual bool PushObjFunc(SquirrelScript script, SquirrelObject obj, const char* fun) = 0;
+	virtual bool Call(SquirrelScript script, int count) = 0;
+	virtual const char* GetName(SquirrelScript script, SquirrelObject obj) = 0;
 };
 
 #define TEMPORARY_TO_CPP(type) \
@@ -125,7 +139,12 @@ template <> \
 bool ConvertToCpp<type>(SquirrelScript script, type* valOut, int a) \
 { \
 	extern ISquirrel* g_pSquirrel; \
-	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<type>::id()); \
+	if(g_pSquirrel->GetStackUserData(script, a, (void**)valOut, TypeIdentifier<type>::id())) \
+	{ \
+		*(type**)valOut = **(type***)valOut; \
+		return true; \
+	} \
+	return false; \
 }
 
 #define TEMPORARY_FROM_CPP(type) \
@@ -134,7 +153,17 @@ bool ConvertFromCpp<type>(SquirrelScript script, type valIn) \
 { \
 	extern ISquirrel* g_pSquirrel; \
 	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<type>::id()); \
-	return true;\
+	return true; \
+}
+
+#define DELEGATE_FROM_CPP(type) \
+template <> \
+bool ConvertFromCpp<type*>(SquirrelScript script, type* valIn) \
+{ \
+	extern ISquirrel* g_pSquirrel; \
+	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<type*>::id()); \
+	g_pSquirrel->SetDelegate(script, type##_delegate); \
+	return true; \
 }
 
 
@@ -144,28 +173,34 @@ extern SQBINDING* sq_bindings;
 
 struct SQBINDING
 {
-	SQBINDING(SquirrelFunctionDecl* func, SquirrelClassDecl* cls)
+	SQBINDING(SquirrelFunctionDecl* func, SquirrelClassDecl* cls, SquirrelDelegateDecl* dlg)
 	{
 		next = sq_bindings;
 		sq_bindings = this;
 		funcdcl = func;
 		classdcl = cls;
+		delegatedcl = dlg;
 	}
 	SQBINDING* next = 0;
 	SquirrelFunctionDecl* funcdcl = 0;
 	SquirrelClassDecl* classdcl = 0;
+	SquirrelDelegateDecl* delegatedcl = 0;
 };
 
 
 #define ENDSQCLASS \
 SquirrelObject CONCAT(SQ_CLASSNAME, _classobj); \
 SquirrelClassDecl CONCAT(SQ_CLASSNAME, _classdecl)[] = { STRINGG(SQ_CLASSNAME),(SquirrelFunctionDecl*)(CONCAT(LIBRARY_NAME, COUNTER_B).Data), &CONCAT(SQ_CLASSNAME, _classobj), TypeIdentifier<SQ_CLASSNAME*>::id(), nullptr, nullptr, nullptr, nullptr }; \
-static SQBINDING CONCAT(SQ_CLASSNAME, _sqbinding)((SquirrelFunctionDecl*)0, (SquirrelClassDecl*)CONCAT(SQ_CLASSNAME, _classdecl));
+static SQBINDING CONCAT(SQ_CLASSNAME, _sqbinding)((SquirrelFunctionDecl*)0, (SquirrelClassDecl*)CONCAT(SQ_CLASSNAME, _classdecl), (SquirrelDelegateDecl*)0);
 
 
 #define ENDSQFUNCTIONS \
-static SQBINDING CONCAT(LIBRARY_NAME, _sqbinding)((SquirrelFunctionDecl*)(CONCAT(LIBRARY_NAME, COUNTER_B).Data), (SquirrelClassDecl*)0);
+static SQBINDING CONCAT(LIBRARY_NAME, _sqbinding)((SquirrelFunctionDecl*)(CONCAT(LIBRARY_NAME, COUNTER_B).Data), (SquirrelClassDecl*)0, (SquirrelDelegateDecl*)0);
 
+#define ENDSQDELEGATE \
+SquirrelObject CONCAT(SQ_CLASSNAME, _delegate); \
+SquirrelDelegateDecl CONCAT(SQ_CLASSNAME, _delegatedcl)[] = { STRINGG(SQ_CLASSNAME),(SquirrelFunctionDecl*)(CONCAT(LIBRARY_NAME, COUNTER_B).Data), &CONCAT(SQ_CLASSNAME, _delegate), nullptr, nullptr, nullptr }; \
+static SQBINDING CONCAT(SQ_CLASSNAME, _sqbinding)((SquirrelFunctionDecl*)0, (SquirrelClassDecl*)0, (SquirrelDelegateDecl*)CONCAT(SQ_CLASSNAME, _delegatedcl));
 
 template <typename Type>
 constexpr bool IsPointer = false;
@@ -180,6 +215,14 @@ template <typename Type>
 constexpr bool IsPointer<Type&> = true;
 
 
+template <typename Type>
+constexpr bool IsRef = false;
+
+template <typename Type>
+constexpr bool IsRef<Type&> = true;
+
+template <typename Type>
+constexpr bool IsRef<const Type&> = true;
 
 template <typename Type>
 struct UnRef
@@ -207,12 +250,24 @@ constexpr bool IsThiscall(Return_Type(Class_Name::*)(Argument_Types...), Type t)
 	return Same<Return_Type(__thiscall Class_Name::*)(Argument_Types...), Type>;
 }
 
+
+template <typename Return_Type, typename Class_Name, typename... Argument_Types, typename Type>
+constexpr bool IsThiscall(Return_Type(Class_Name::*)(Argument_Types...) const, Type t)
+{
+	return Same<Return_Type(__thiscall Class_Name::*)(Argument_Types...) const, Type>;
+}
+
 template <typename Return_Type, typename... Argument_Types, typename Type>
 constexpr bool IsCDecl(Return_Type(*)(Argument_Types...), Type t)
 {
 	return Same<Return_Type(__cdecl *)(Argument_Types...), Type>;
 }
 
+template <typename Return_Type, typename... Argument_Types>
+constexpr bool IsCDecl(Return_Type(*t)(Argument_Types...))
+{
+	return IsCDecl(t, t);
+}
 
 
 template <typename Value_Type>
@@ -443,6 +498,12 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 	return Ret;
 }
 
+template <typename Return_Type, typename... Argument_Types>
+constexpr Return_Type (*GetOverloadedFunction(Return_Type(*f)(Argument_Types...)))(Argument_Types...) // LMAO
+{
+	return f;
+}
+
 union FourByteValue
 {
 	const char* v_s;
@@ -563,5 +624,27 @@ inline bool ConvertToCpp<bool>(SquirrelScript script, bool* valOut, int a)
 	return true;
 }
 
+template <>
+inline bool ConvertFromCpp(SquirrelScript script, int valIn)
+{
+	return true;
+}
 
+template <>
+inline bool ConvertFromCpp(SquirrelScript script, float valIn)
+{
+	return true;
+}
+
+template <>
+inline bool ConvertFromCpp(SquirrelScript script, char* valIn)
+{
+	return true;
+}
+
+template <>
+inline bool ConvertFromCpp(SquirrelScript script, bool valIn)
+{
+	return true;
+}
 #endif

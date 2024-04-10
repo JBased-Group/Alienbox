@@ -6,7 +6,7 @@
 #include "sqstdstring.h"
 #include "sqstdmath.h"
 #include "utlvector.h"
-
+void print_args(HSQUIRRELVM v);
 class CSquirrel : public ISquirrel
 {
 public:
@@ -30,18 +30,25 @@ public:
 	virtual bool GetStackFloat(SquirrelScript script, int i, float* val);
 	virtual bool GetStackString(SquirrelScript script, int i, const char** val);
 	virtual bool GetStackPtr(SquirrelScript script, int i, void** val, const int* typetag);
+	virtual bool GetStackUserData(SquirrelScript script, int i, void** val, const int* typetag);
 	virtual bool GetStackUserPtr(SquirrelScript script, int i, void** val);
 	virtual void PushInt(SquirrelScript script, int val);
 	virtual void PushFloat(SquirrelScript script, float val);
 	virtual void PushString(SquirrelScript script, const char* val);
-	virtual void PushPtr(SquirrelScript script, void* val, const int* typetag);
+	virtual SquirrelObject PushPtr(SquirrelScript script, void* val, const int* typetag);
 	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr);
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes);
 	virtual bool SetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var, fieldtype_t ftype);
 	virtual bool GetObjectVariant(SquirrelScript script, SquirrelObject obj, const char* name, variant_t* var);
 	virtual datamap_t* GenerateDatamap(SquirrelScript script, SquirrelObject obj, datamap_t* basemap);
-	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset);
-	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset);
+	virtual SendTable* GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset, const char* name);
+	virtual RecvTable* GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset, const char* name);
+	virtual void SetDelegate(SquirrelScript script, SquirrelObject obj);
+	virtual void RegisterDelegates(SquirrelScript script, SquirrelDelegateDecl* classes);
+	virtual void Pop(SquirrelScript script);
+	virtual bool PushObjFunc(SquirrelScript script, SquirrelObject obj, const char* fun);
+	virtual bool Call(SquirrelScript script, int count);
+	virtual const char* GetName(SquirrelScript script, SquirrelObject obj);
 };
 
 
@@ -87,6 +94,17 @@ bool CSquirrel::GetStackPtr(SquirrelScript script, int i, void** val, const int*
 	return SQ_SUCCEEDED(sq_getinstanceup((HSQUIRRELVM)script, i, val, (void*)typetag, SQFalse));
 }
 
+bool CSquirrel::GetStackUserData(SquirrelScript script, int i, void** val, const int* typetag)
+{
+	const int* thetag;
+	bool succ = SQ_SUCCEEDED(sq_getuserdata((HSQUIRRELVM)script, i, val, (void**)&thetag));
+	if (!succ)
+	{
+		return false;
+	}
+	return thetag == typetag;
+}
+
 bool CSquirrel::GetStackUserPtr(SquirrelScript script, int i, void** val)
 {
 	return SQ_SUCCEEDED(sq_getuserpointer((HSQUIRRELVM)script, i, val));
@@ -108,14 +126,58 @@ void CSquirrel::PushString(SquirrelScript script, const char* val)
 	sq_pushstring((HSQUIRRELVM)script, val, -1);
 }
 
-void CSquirrel::PushPtr(SquirrelScript script, void* val, const int* typetag)
+SquirrelObject CSquirrel::PushPtr(SquirrelScript script, void* val, const int* typetag)
 {
-	sq_pushuserpointer((HSQUIRRELVM)script, val);
+	*(void**)sq_newuserdata((HSQUIRRELVM)script, 4) = val;
+	sq_settypetag((HSQUIRRELVM)script, -1, (void*)typetag);
+	HSQOBJECT lol;
+	sq_getstackobj((HSQUIRRELVM)script, -1, &lol);
+	return *(SquirrelObject*)&lol;
+}
+
+void CSquirrel::SetDelegate(SquirrelScript script, SquirrelObject obj)
+{
+	sq_pushobject((HSQUIRRELVM)script, *(HSQOBJECT*)&obj);
+	sq_setdelegate((HSQUIRRELVM)script, -2);
+//	print_args((HSQUIRRELVM)script);
 }
 
 bool CSquirrel::GetStackObjectUserdata(SquirrelScript script, void** ptr)
 {
 	return SQ_SUCCEEDED(sq_getinstanceup((HSQUIRRELVM)script, 1, ptr, 0, SQFalse));
+}
+
+
+void CSquirrel::RegisterDelegates(SquirrelScript script, SquirrelDelegateDecl* delegates)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	while (delegates->funcs)
+	{
+		sq_pushstring(v, delegates->name, -1);
+		sq_newtable(v);
+		sq_getstackobj(v, -1, (HSQOBJECT*)delegates->delegateobj);
+		while (delegates->funcs->ptr)
+		{
+			if (!delegates->funcs->name)
+			{
+				sq_pushnull(v);
+			}
+			else
+			{
+				sq_pushstring(v, delegates->funcs->name, -1);
+			}
+			sq_newclosure(v, (SQFUNCTION)delegates->funcs->ptr, 0);
+			sq_newslot(v, -3, false);
+			delegates->funcs++;
+		}
+		sq_newslot(v, -3, false);
+		delegates++;
+	}
+}
+
+void CSquirrel::Pop(SquirrelScript script)
+{
+	sq_pop((HSQUIRRELVM)script, 1);
 }
 
 void CSquirrel::RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes)
@@ -376,7 +438,7 @@ void SendProxy_SquirrelToInt(const SendProp* pProp, const void* pStruct, const v
 }
 
 
-SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset)
+SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject obj, SendTable* basemap, size_t objOffset, const char* name)
 {
 	HSQUIRRELVM v = (HSQUIRRELVM)script;
 	HSQOBJECT inst = *(HSQOBJECT*)&obj;
@@ -390,6 +452,8 @@ SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject ob
 		SQObjectType valtype = sq_gettype(v, -1);
 		SendProp prop;
 		sq_pop(v, 1);
+		char* value;
+		sq_getstring(v, -1, (const char**)&value);
 		if (SQ_FAILED(sq_getattributes(v, -3)))
 		{
 			sq_pop(v, 1);
@@ -407,17 +471,20 @@ SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject ob
 			sq_getstring(v, -2, &key); // TODO : dont do this
 			if (!V_strcmp(key, "sendprop"))
 			{
-				char* value;
-				sq_getstring(v, -1, (const char**)&value);
+				char* allocedkey;
 				switch (valtype)
 				{
 				case OT_FLOAT:
 					prop = SendPropFloat(value, objOffset,4,32,0,0.0f, HIGH_DEFAULT,SendProxy_SquirrelToFloat);
-					prop.SetExtraData(key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(key)+1);
+					strcpy(allocedkey, key);
+					prop.SetExtraData(allocedkey);
 					break;
 				case OT_INTEGER:
 					prop = SendPropInt(value, objOffset,4,-1,0,SendProxy_SquirrelToInt);
-					prop.SetExtraData(key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(key) + 1);
+					strcpy(allocedkey, key);
+					prop.SetExtraData(allocedkey);
 					break;
 				default:
 					continue;
@@ -430,7 +497,7 @@ SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject ob
 	}
 	SendProp* props = (SendProp*)MemAlloc_Alloc(sendprops.Count() * sizeof(SendProp));
 	memcpy(props, sendprops.Base(), sendprops.Count() * sizeof(SendProp));
-	st->Construct(props, sendprops.Count(), (char*)"DT_WHATEVERCHANGETHIS");
+	st->Construct(props, sendprops.Count(), (char*)name);
 	return st;
 }
 
@@ -458,8 +525,30 @@ void RecvProxy_FloatToSquirrel(const CRecvProxyData* pData, void* pStruct, void*
 	sq_pop(v, 1);
 }
 
+const char* CSquirrel::GetName(SquirrelScript script, SquirrelObject obj)
+{
+	HSQOBJECT inst = *(HSQOBJECT*)&obj;
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	sq_pushroottable(v);
+	sq_pushnull(v);
+	while (SQ_SUCCEEDED(sq_next(v, -2)))
+	{
+		HSQOBJECT hi;
+		sq_getstackobj(v, -1, &hi);
+		if (hi._type == inst._type && hi._unVal.nInteger == inst._unVal.nInteger)
+		{
+			const char* out;
+			sq_getstring(v, -2, &out);
+			sq_pop(v, 4);
+			return out;
+		}
+		sq_pop(v, 2);
+	}
+	sq_pop(v, 2);
+	return 0;
+}
 
-RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset)
+RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset, const char* name)
 {
 	HSQUIRRELVM v = (HSQUIRRELVM)script;
 	HSQOBJECT inst = *(HSQOBJECT*)&obj;
@@ -473,6 +562,8 @@ RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject ob
 		SQObjectType valtype = sq_gettype(v, -1);
 		RecvProp prop;
 		sq_pop(v, 1);
+		char* value;
+		sq_getstring(v, -1, (const char**)&value);
 		if (SQ_FAILED(sq_getattributes(v, -3)))
 		{
 			sq_pop(v, 1);
@@ -490,17 +581,22 @@ RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject ob
 			sq_getstring(v, -2, &key); // TODO : dont do this
 			if (!V_strcmp(key, "recvprop"))
 			{
-				char* value;
-				sq_getstring(v, -1, (const char**)&value);
+				
+				char* allocedkey;
+				
 				switch (valtype)
 				{
 				case OT_FLOAT:
 					prop = RecvPropFloat(value, objOffset, 4, 0, RecvProxy_FloatToSquirrel);
-					prop.SetExtraData(key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(key) + 1);
+					strcpy(allocedkey, key);
+					prop.SetExtraData(allocedkey);
 					break;
 				case OT_INTEGER:
 					prop = RecvPropInt(value, objOffset, 4, 0, RecvProxy_IntToSquirrel);
-					prop.SetExtraData(key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(key) + 1);
+					strcpy(allocedkey, key);
+					prop.SetExtraData(allocedkey);
 					break;
 				default:
 					continue;
@@ -513,7 +609,7 @@ RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject ob
 	}
 	RecvProp* props = (RecvProp*)MemAlloc_Alloc(recvprops.Count() * sizeof(RecvProp));
 	memcpy(props, recvprops.Base(), recvprops.Count() * sizeof(RecvProp));
-	rt->Construct(props, recvprops.Count(), (char*)"DT_WHATEVERCHANGETHIS");
+	rt->Construct(props, recvprops.Count(), (char*)name);
 	return rt;
 }
 
@@ -543,6 +639,99 @@ SquirrelValue CSquirrel::InstantiateClass(SquirrelScript script, SquirrelObject 
 	return ret;
 }
 
+
+void print_args(HSQUIRRELVM v)
+{
+	SQInteger nargs = sq_gettop(v); //number of arguments
+	for (SQInteger n = 1; n <= nargs; n++)
+	{
+		Msg("arg %d is ", n);
+		switch (sq_gettype(v, n))
+		{
+		case OT_NULL:
+			Msg("null");
+			break;
+		case OT_INTEGER:
+			Msg("integer");
+			break;
+		case OT_FLOAT:
+			Msg("float");
+			break;
+		case OT_STRING:
+			Msg("string");
+			break;
+		case OT_TABLE:
+			Msg("table");
+			break;
+		case OT_ARRAY:
+			Msg("array");
+			break;
+		case OT_USERDATA:
+			Msg("userdata");
+			break;
+		case OT_CLOSURE:
+			Msg("closure(function)");
+			break;
+		case OT_NATIVECLOSURE:
+			Msg("native closure(C function)");
+			break;
+		case OT_GENERATOR:
+			Msg("generator");
+			break;
+		case OT_USERPOINTER:
+			Msg("userpointer");
+			break;
+		case OT_CLASS:
+			Msg("class");
+			break;
+		case OT_INSTANCE:
+			Msg("instance");
+			break;
+		case OT_WEAKREF:
+			Msg("weak reference");
+			break;
+		default:
+			break;
+		}
+		Msg("\n");
+	}
+}
+
+
+bool CSquirrel::PushObjFunc(SquirrelScript script, SquirrelObject obj, const char* fun)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	HSQOBJECT object = *(HSQOBJECT*)&obj;
+	sq_pushobject(v, object);
+	sq_pushstring(v, fun, -1);
+	sq_get(v, -2);
+	
+	if (sq_gettype(v, -1) != OT_CLOSURE)
+	{
+		sq_pop(v, 1);
+		return false;
+	}
+	sq_remove(v, -2);
+	sq_pushobject(v, object);
+	return true;
+}
+
+bool CSquirrel::Call(SquirrelScript script, int count)
+{
+	HSQUIRRELVM v = (HSQUIRRELVM)script;
+	//print_args(v);
+	if (sq_call(v, count, 1, 0))
+	{
+		sq_getlasterror(v);
+		const char* err;
+		sq_getstring(v, -1, &err);
+		Msg("%s\n", err);
+		sq_pop(v, 1);
+		return false;
+	}
+	return true;
+}
+
 SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObject obj, const char* fun, const char* types, ...)
 {
 	SquirrelValue ret;
@@ -558,8 +747,9 @@ SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObjec
 		sq_pop(v, 1);
 		return ret;
 	}
+	sq_remove(v, -2);
 	sq_pushobject(v, object);
-	int count = strlen(types);
+	int count = V_strlen(types);
 
 	va_list args;
 	va_start(args, types);
@@ -583,6 +773,9 @@ SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObjec
 		case 'u':
 			sq_pushuserpointer(v, *(void**)&va_arg(args, SquirrelHandle));
 			break;
+		case 'o':
+			sq_pushobject(v, *(HSQOBJECT*)va_arg(args, SquirrelObject*));
+			break;
 		default:
 			sq_pushnull(v);
 			break;
@@ -595,6 +788,7 @@ SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObjec
 		const char* err;
 		sq_getstring(v, -1, &err);
 		Msg("%s\n", err);
+		sq_pop(v, 1);
 		return ret;
 	}
 	SQObjectType type = sq_gettype(v, -1);
@@ -656,6 +850,7 @@ SquirrelScript CSquirrel::LoadScript(const char* script, SquirrelFunctionDecl* i
 
 	sq_pushroottable(v);
 	SQRESULT callres = sq_call(v, 1, false, true);
+	
 	//for (int i = 0; i < objects.Count(); i++)
 	//{
 	//	if (sq_getrefcount(v, &objects[i]))

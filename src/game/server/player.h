@@ -1383,10 +1383,10 @@ inline bool CBasePlayer::TouchedPhysics( void )
 //-----------------------------------------------------------------------------
 inline CBasePlayer *ToBasePlayer( CBaseEntity *pEntity )
 {
-	if ( !pEntity || !pEntity->IsPlayer() )
-		return NULL;
+	//if ( !pEntity || !pEntity->IsPlayer() )
+	//	return NULL;
 #if _DEBUG
-	return dynamic_cast<CBasePlayer *>( pEntity );
+	return static_cast<CBasePlayer *>( pEntity );
 #else
 	return static_cast<CBasePlayer *>( pEntity );
 #endif

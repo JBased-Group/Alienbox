@@ -1870,7 +1870,8 @@ int SQ_DeclareClientClass(SquirrelScript script)
 	*(void**)&createsquirrelentfunc[1] = entfactory;
 	createsquirrelentfunc[5] = '\xe9';
 	*(int*)&createsquirrelentfunc[6] = (int)(&CreateEnt) - (int)createsquirrelentfunc - 10; // offset to SquirrelEntityFactory::CreateEnt from &createsquirrelentfunc[5];
-	entfactory->clientclass = new ClientClass("CSquirrelEntity", (CreateClientClassFn)createsquirrelentfunc, 0, g_pSquirrel->GenerateRecvtable(script,cls,C_BaseEntity::m_pClassRecvTable,(size_t)&((C_SquirrelEntity*)0)->obj));
+	const char* name = g_pSquirrel->GetName(script,cls);
+	entfactory->clientclass = new ClientClass((char*)name, (CreateClientClassFn)createsquirrelentfunc, 0, g_pSquirrel->GenerateRecvtable(script,cls,C_BaseEntity::m_pClassRecvTable,(size_t)&((C_SquirrelEntity*)0)->obj, name));
 	entfactory->clientclass->m_ClassID = 0;
 	return 0;
 }
@@ -1911,6 +1912,9 @@ void RegisterAllSquirrel(SquirrelScript script)
 	{
 		if(sq_bindings->classdcl)
 			g_pSquirrel->RegisterClasses(script, sq_bindings->classdcl);
+
+		if (sq_bindings->delegatedcl)
+			g_pSquirrel->RegisterDelegates(script, sq_bindings->delegatedcl);
 		
 		if (sq_bindings->funcdcl)
 		{

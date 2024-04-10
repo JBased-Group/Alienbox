@@ -2563,15 +2563,6 @@ inline bool CBaseEntity::IsSolid() const
 	return CollisionProp()->IsSolid( );
 }
 
-inline void CBaseEntity::SetSolid( SolidType_t val )
-{
-	CollisionProp()->SetSolid( val );
-}
-
-inline void CBaseEntity::SetSolidFlags( int flags )
-{
-	CollisionProp()->SetSolidFlags( flags );
-}
 
 inline SolidType_t CBaseEntity::GetSolid() const
 {

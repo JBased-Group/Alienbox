@@ -1,4 +1,4 @@
-class ExplosiveThing extends C_BaseEntity
+class EpicCouch extends C_BaseEntity
 {
 	constructor()
 	{
@@ -10,26 +10,24 @@ class ExplosiveThing extends C_BaseEntity
 		
 	}
 	
-	function DrawModel(flags, instance)
+	function GetRenderData(pData)
 	{
-		local info = ClientModelRenderInfo_t();
-		info.Setflags(flags);
-		info.SetpRenderable(base.ToIClientRenderable());
-		info.Setinstance(base.GetModelInstance());
-		info.Setindex(base.Getindex());
-		info.SetpModel(base.GetModel());
-		info.Setorigin(base.GetAbsOrigin());
-		info.Setangles(base.GetAbsAngles());
-		info.Setskin(0);
-		info.Setbody(0);
-		info.Sethitboxset(0);
-		local state = DrawModelState_t();
-		GetModelRender().DrawModelSetup(info,state,0);
-		GetModelRender().DrawModelExecute(state,info,0);
+		//pData.Set(6);
+		return true;
+	}
+	
+	function SetupBones(pBoneToWorldOut)
+	{
+		local toshear = base.RenderableToWorldTransform();
+		pBoneToWorldOut.Set(toshear);
+		
+		::MatrixShear(pBoneToWorldOut,::CreateVector(1.0,0.0,0.0));
+		
+		return true;
 	}
 	
 	</ recvprop = true />
 	testsend = 23;
 }
 
-DeclareClientClass(ExplosiveThing);
+DeclareClientClass(EpicCouch);

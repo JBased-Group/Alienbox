@@ -1208,12 +1208,12 @@ CON_COMMAND_F( setpos, "Move player to specified origin (must have sv_cheats).",
 	}
 
 	CBaseEntity *pTeleportEnt = pPlayer;
-#ifdef INFESTED_DLL
-	CASW_Player *pASWPlayer = ToASW_Player( pPlayer );
-	pTeleportEnt = pASWPlayer->GetNPC();
-	if ( !pTeleportEnt )
-		return;
-#endif
+//#ifdef INFESTED_DLL
+	//CASW_Player *pASWPlayer = ToASW_Player( pPlayer );
+	//pTeleportEnt = pASWPlayer->GetNPC();
+	//if ( !pTeleportEnt )
+		//return;
+//#endif
 
 	Vector oldorigin = pTeleportEnt->GetAbsOrigin();
 

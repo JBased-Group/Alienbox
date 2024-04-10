@@ -971,6 +971,7 @@ bool CServerGameDLL::IsFramerateOk( )
 	return gpGlobals->frametime < sv_frametime_limit.GetFloat() * GetTickInterval();
 }
 
+
 class CSquirrelEntityFactory : public IEntityFactory
 {
 public:
@@ -979,7 +980,8 @@ public:
 		theentity = sqent;
 		thescript = script;
 		datamap = g_pSquirrel->GenerateDatamap(thescript, theentity, &CBaseEntity::m_DataMap);
-		serverclass = new ServerClass("CSquirrelEntity", g_pSquirrel->GenerateSendtable(thescript, theentity, CBaseEntity::m_pClassSendTable, (size_t)&((CSquirrelEntity*)0)->obj));
+		const char* name = g_pSquirrel->GetName(script,sqent);
+		serverclass = new ServerClass((char*)name, g_pSquirrel->GenerateSendtable(thescript, theentity, CBaseEntity::m_pClassSendTable, (size_t)&((CSquirrelEntity*)0)->obj, name));
 		CSendTablePrecalc* cstp = (CSendTablePrecalc*)MemAlloc_Alloc(0x118);
 		__asm
 		{
@@ -1014,6 +1016,7 @@ public:
 		newEnt->m_serverClass = serverclass;
 		g_pSquirrel->SetObjectUserdata(thescript, sqobj.val_obj, newEnt, TypeIdentifier<CBaseEntity*>::id());
 		newEnt->PostConstructor(pClassName);
+		Msg("%x\n", newEnt->NetworkProp()->GetServerClass());
 		return newEnt->NetworkProp();
 	}
 
@@ -1056,6 +1059,8 @@ int SQ_LinkEntityToClass(SquirrelScript script)
 constexpr ListOfStuff<1> VectorBindings0x0000 = { 0,0 };
 SquirrelObject SQVector;
 
+
+
 int SQ_Vector(SquirrelScript script)
 {
 	float x, y, z;
@@ -1075,6 +1080,21 @@ static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Da
 
 "",nullptr,nullptr,nullptr };
 
+#define SQ_CLASSNAME VectorLol
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() VectorScale
+#define SQ_OVERRIDE <void,const Vector&,vec_t,Vector&>
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() VectorAdd
+#define SQ_OVERRIDE <void,const Vector&,const Vector&,Vector&>
+#include "squirrel/AddInterfaceBinding.h"
+
+ENDSQFUNCTIONS
+
+TEMPORARY_FROM_CPP(QAngle*)
+
 extern void RegisterCBaseCombatWeaponSquirrelFunctions(SquirrelScript script);
 
 void RegisterAllSquirrel(SquirrelScript script)
@@ -1087,6 +1107,9 @@ void RegisterAllSquirrel(SquirrelScript script)
 	{
 		if (sq_bindings->classdcl)
 			g_pSquirrel->RegisterClasses(script, sq_bindings->classdcl);
+
+		if (sq_bindings->delegatedcl)
+			g_pSquirrel->RegisterDelegates(script, sq_bindings->delegatedcl);
 
 		if (sq_bindings->funcdcl)
 		{
@@ -2792,15 +2815,15 @@ void CServerGameEnts::CheckTransmit( CCheckTransmitInfo *pInfo, const unsigned s
 	edict_t *pBaseEdict = gpGlobals->pEdicts;
 
 	CBaseEntity *pRecipientEntity = CBaseEntity::Instance( pInfo->m_pClientEnt );
-	Assert( pRecipientEntity && pRecipientEntity->IsPlayer() );
+	//Assert( pRecipientEntity && pRecipientEntity->IsPlayer() );
 	if ( !pRecipientEntity )
 		return;
 	
 	MDLCACHE_CRITICAL_SECTION();
-	CBasePlayer *pRecipientPlayer = static_cast<CBasePlayer*>( pRecipientEntity );
-	const int skyBoxArea = pRecipientPlayer->m_Local.m_skybox3d.area;
+	CSquirrelEntity *pRecipientPlayer = static_cast<CSquirrelEntity*>( pRecipientEntity );
+	const int skyBoxArea = 0; //pRecipientPlayer->m_Local.m_skybox3d.area;
 #ifndef _X360
-	const bool bIsHLTV = pRecipientPlayer->IsHLTV();
+	const bool bIsHLTV = false; //pRecipientPlayer->IsHLTV();
 #if defined( REPLAY_ENABLED )
 	const bool bIsReplay = pRecipientPlayer->IsReplay();
 #else
@@ -3148,11 +3171,11 @@ void CServerGameClients::ClientSettingsChanged( edict_t *pEdict )
 	if ( !pEdict->GetUnknown() )
 		return;
 
-	CBasePlayer *player = ( CBasePlayer * )CBaseEntity::Instance( pEdict );
+	CSquirrelEntity *player = ( CSquirrelEntity * )CBaseEntity::Instance( pEdict );
 	
 	if ( !player )
 		return;
-
+	/*
 #define QUICKGETCVARVALUE(v) (engine->GetClientConVarValue( player->entindex(), v ))
 
 	// get network setting for prediction & lag compensation
@@ -3214,6 +3237,7 @@ void CServerGameClients::ClientSettingsChanged( edict_t *pEdict )
 #undef QUICKGETCVARVALUE
 
 	g_pGameRules->ClientSettingsChanged( player );
+	*/
 }
 
 
@@ -3257,16 +3281,16 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 
 	CUtlVector< Vector > areaPortalOrigins;
 
-	CBasePlayer *pPlayer = ( CBasePlayer * )GetContainingEntity( pClient );
+	CSquirrelEntity* pPlayer = ( CSquirrelEntity * )GetContainingEntity( pClient );
 	if ( pPlayer )
 	{
 		if ( !pVE )
 		{
 			org = pPlayer->EyePosition();
 		}
-		pPlayer->SetupVisibility( pVE, pvs, pvssize );
+		//pPlayer->SetupVisibility( pVE, pvs, pvssize );
 		UTIL_SetClientVisibilityPVS( pClient, pvs, pvssize );
-		fovDistanceAdjustFactor = pPlayer->GetFOVDistanceAdjustFactorForNetworking();
+		//fovDistanceAdjustFactor = pPlayer->GetFOVDistanceAdjustFactorForNetworking();
 
 		areaPortalOrigins.AddToTail( org );
 
@@ -3333,15 +3357,43 @@ void CServerGameClients::ClientSetupVisibility( edict_t *pViewEntity, edict_t *p
 
 	// Update the area bits that get sent to the client.
 	Assert( pPlayer );
-	if ( pPlayer )
-	{
-		pPlayer->m_Local.UpdateAreaBits( pPlayer, portalBits );
-	}
+	//if ( pPlayer )
+	//{
+	//	pPlayer->m_Local.UpdateAreaBits( pPlayer, portalBits );
+	//}
 
 
 }
 
+TEMPORARY_TO_CPP(CUserCmd*)
 
+#define SQ_CLASSNAME CUserCmd
+#include "squirrel/StartLibrary.h"
+
+#define SQ_VARNAME forwardmove
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME sidemove
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME upmove
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME viewangles
+#include "squirrel/MakeGetterSetter.h"
+
+ENDSQDELEGATE
+
+
+
+template <>
+bool ConvertFromCpp<CUserCmd*>(SquirrelScript script, CUserCmd* valIn)
+{
+	extern ISquirrel* g_pSquirrel;
+	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<CUserCmd*>::id());
+	g_pSquirrel->SetDelegate(script, CUserCmd_delegate);
+	return true;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -3372,12 +3424,12 @@ float CServerGameClients::ProcessUsercmds( edict_t *player, bf_read *buf, int nu
 	Assert( numcmds >= 0 );
 	Assert( ( totalcmds - numcmds ) >= 0 );
 
-	CBasePlayer *pPlayer = nullptr;
+	CSquirrelEntity *pPlayer = nullptr;
 	CBaseEntity *pEnt = CBaseEntity::Instance(player);
-	if ( pEnt && pEnt->IsPlayer() )
-	{
-		pPlayer = static_cast< CBasePlayer * >( pEnt );
-	}
+	//if ( pEnt && pEnt->IsPlayer() )
+	//{
+		pPlayer = static_cast<CSquirrelEntity* >( pEnt );
+	//}
 	// Too many commands?
 	if ( totalcmds < 0 || totalcmds >= ( CMD_MAXBACKUP - 1 ) )
 	{
@@ -3411,7 +3463,7 @@ float CServerGameClients::ProcessUsercmds( edict_t *player, bf_read *buf, int nu
 	}
 
 	MDLCACHE_CRITICAL_SECTION();
-	pPlayer->ProcessUsercmds( cmds, numcmds, totalcmds, dropped_packets, paused );
+	pPlayer->CallFunction<void>("ProcessUsercmds", cmds, numcmds, totalcmds, dropped_packets, paused);
 
 	return TICK_INTERVAL;
 }

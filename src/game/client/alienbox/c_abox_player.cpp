@@ -5,7 +5,7 @@
 IMPLEMENT_CLIENTCLASS_DT(C_ABox_Player, DT_ABox_Player, CABox_Player)
 END_RECV_TABLE()
 
-LINK_ENTITY_TO_CLASS(player, C_ABox_Player);
+//LINK_ENTITY_TO_CLASS(player, C_ABox_Player);
 
 C_ABox_Player::C_ABox_Player() : BaseClass()
 {

@@ -11,6 +11,10 @@ int CONCAT(CONCAT(SQ_CLASSNAME,SQ_VARNAME), Getter)(SquirrelScript script)
 	{
 		g_pSquirrel->PushInt(script, *(int*)&returnvar);
 	}
+	else if constexpr (Same<decltype(returnvar), unsigned short>)
+	{
+		g_pSquirrel->PushInt(script, *(unsigned short*)&returnvar);
+	}
 	else if constexpr (Same<decltype(returnvar), float>)
 	{
 		g_pSquirrel->PushFloat(script, *(float*)&returnvar);
@@ -26,6 +30,11 @@ int CONCAT(CONCAT(SQ_CLASSNAME,SQ_VARNAME), Getter)(SquirrelScript script)
 	else if constexpr (IsPointer<decltype(returnvar)>)
 	{
 		if (!((GenericConverterFromCpp)(((void* (*)())TypeIdentifier<decltype(returnvar)>::ConvertFromCpp)()))(script, *(void**)&returnvar))
+			return 0;
+	}
+	else // YOU WILL BE A POINTER
+	{
+		if (!((GenericConverterFromCpp)(((void* (*)())TypeIdentifier<decltype(&cls->SQ_VARNAME)>::ConvertFromCpp)()))(script, (void*)&cls->SQ_VARNAME))
 			return 0;
 	}
 	return 1;

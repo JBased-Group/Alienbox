@@ -66,6 +66,7 @@
 	
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+#include <c_squirrel_entity.h>
 		  
 void ToolFramework_AdjustEngineViewport( int& x, int& y, int& width, int& height );
 bool ToolFramework_SetupEngineView( Vector &origin, QAngle &angles, float &fov );
@@ -490,15 +491,15 @@ void CViewRender::OnRenderStart()
 		SetUpView();
 
 		// Adjust mouse sensitivity based upon the current FOV
-		C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+		C_SquirrelEntity *player = (C_SquirrelEntity*)C_BasePlayer::GetLocalPlayer();
 		if ( player )
 		{
-			default_fov.SetValue( player->m_iDefaultFOV );
+			//default_fov.SetValue( player->m_iDefaultFOV );
 
 			//Update our FOV, including any zooms going on
 			int iDefaultFOV = default_fov.GetInt();
-			int	localFOV	= player->GetFOV();
-			int min_fov		= player->GetMinFOV();
+			int	localFOV	= player->CallFunction<int>("GetFOV");
+			int min_fov		= player->CallFunction<int>("GetMinFOV");
 
 			// Don't let it go too low
 			localFOV = MAX( min_fov, localFOV );
@@ -654,12 +655,12 @@ void CViewRender::SetUpView()
 	// Enable spatial partition access to edicts
 	partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, false );
 
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_SquirrelEntity *pPlayer = (C_SquirrelEntity*)C_BasePlayer::GetLocalPlayer();
 
 	bool bNoViewEnt = false;
 	if( pPlayer == NULL )
 	{
-		pPlayer = GetSplitScreenViewPlayer( nSlot );
+		//pPlayer = GetSplitScreenViewPlayer( nSlot );
 		bNoViewEnt = true;
 	}
 
@@ -679,9 +680,9 @@ void CViewRender::SetUpView()
 		// FIXME: What happens when there's no player?
 		if (pPlayer)
 		{
-			pPlayer->CalcView( view.origin, view.angles, view.zNear, view.zFar, view.fov );
+			pPlayer->CallFunction<void>("CalcView", &view.origin, (Vector*)&view.angles, view.zNear, view.zFar, view.fov);
 
-#ifdef INFESTED_DLL
+#if defined(INFESTED_DLL) && 0
 			if ( !asw_allow_detach.GetBool() )
 			{
 				C_ASW_Player *pASWPlayer = assert_cast< C_ASW_Player * >( pPlayer );
@@ -713,7 +714,7 @@ void CViewRender::SetUpView()
 				}
 			}
 
-			pPlayer->CalcViewModelView( view.origin, view.angles );
+			//pPlayer->CalcViewModelView( view.origin, view.angles );
 
 			// Is this the proper place for this code?
 			if ( cl_camera_follow_bone_index.GetInt() >= -1 && input->CAM_IsThirdPerson() )
@@ -761,7 +762,7 @@ void CViewRender::SetUpView()
 	AudioState_t audioState;
 	audioState.m_Origin = view.origin;
 	audioState.m_Angles = view.angles;
-	audioState.m_bIsUnderwater = pPlayer && pPlayer->AudioStateIsUnderwater( view.origin );
+	audioState.m_bIsUnderwater = false; //pPlayer && pPlayer->AudioStateIsUnderwater( view.origin );
 
 	ToolFramework_SetupAudioState( audioState );
 

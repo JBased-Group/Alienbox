@@ -50,6 +50,7 @@ bool g_bIsLogging = true;
 
 #define SQ_CLASSNAME Util
 #include "squirrel/StartLibrary.h"
+#include <squirrel_entity.h>
 
 #ifdef	DEBUG
 void DBG_AssertFunction( bool fExpr, const char *szExpr, const char *szFile, int szLine, const char *szMessage )
@@ -649,17 +650,18 @@ int ENTINDEX( CBaseEntity *pEnt )
 //-----------------------------------------------------------------------------
 void UTIL_GetPlayerConnectionInfo( int playerIndex, int& ping, int &packetloss )
 {
-	CBasePlayer *player =  UTIL_PlayerByIndex( playerIndex );
-	if ( player->IsSplitScreenPlayer() && 
+	CSquirrelEntity *player =  (CSquirrelEntity*)UTIL_PlayerByIndex( playerIndex );
+	/*if (player->IsSplitScreenPlayer() &&
 		 player->GetSplitScreenPlayerOwner() )
 	{
 		player = player->GetSplitScreenPlayerOwner();
 		playerIndex = player->entindex();
 	}
+	*/
 
 	INetChannelInfo *nci = engine->GetPlayerNetInfo(playerIndex);
 
-	if ( nci && player && !player->IsBot() )
+	if ( nci && player  /* && !player->IsBot()*/)
 	{
 		float latency = nci->GetAvgLatency( FLOW_OUTGOING ); // in seconds
 		

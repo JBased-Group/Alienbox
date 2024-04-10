@@ -12,14 +12,14 @@ int CSquirrelEntity::YouForgotToImplementOrDeclareServerClass()
 	return 0;
 } 
 
-
 datamap_t* CSquirrelEntity::GetDataDescMap(void)
 {
 	return m_dataMap;
 } 
+
 datamap_t* CSquirrelEntity::GetBaseMap() 
 {	
-	return &CBaseEntity::m_DataMap; // TODO : Change this to the parent squirrel class ent
+	return &CBaseEntity::m_DataMap;
 }
 
 
@@ -41,6 +41,13 @@ void CSquirrelEntity::Think()
 
 int CSquirrelEntity::UpdateTransmitState()
 {
-	return g_pSquirrel->CallObjectFunction(script, obj, "UpdateTransmitState", "").val_int; // TODO : type check
+	SquirrelValue val = g_pSquirrel->CallObjectFunction(script, obj, "UpdateTransmitState", "");
+	if (val.type == SQUIRREL_INT)
+	{
+		return val.val_int;
+	}
+	return 8;
 }
+
+
 

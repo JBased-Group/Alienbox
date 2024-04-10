@@ -4,7 +4,7 @@
 #include "in_buttons.h"
 #include "vphysics/friction.h"
 
-LINK_ENTITY_TO_CLASS(player, CABox_Player);
+//LINK_ENTITY_TO_CLASS(player, CABox_Player);
 
 IMPLEMENT_SERVERCLASS_ST(CABox_Player, DT_ABox_Player)
 END_SEND_TABLE()
@@ -23,11 +23,11 @@ CABox_Player* CABox_Player::CreatePlayer(const char* className, edict_t* ed)
 	player = (CABox_Player*)CreateEntityByName(className);
 	return player;
 }
+
 void CABox_Player::PickupObject(CBaseEntity* pObject, bool bLimitMassAndSize)
 {
 	PlayerPickupObject(this, pObject);
 }
-
 
 static void MatrixOrthogonalize(matrix3x4_t& matrix, int column)
 {

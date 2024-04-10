@@ -1934,7 +1934,8 @@ const QAngle& C_BaseEntity::GetRenderAngles( void )
 	return GetAbsAngles();
 }
 
-const matrix3x4_t &C_BaseEntity::RenderableToWorldTransform()
+#define SQ_FUNCTION() (const matrix3x4_t&,C_BaseEntity,RenderableToWorldTransform,())
+#include "squirrel/AddToBindings.h"
 {
 	return EntityToWorldTransform();
 }
@@ -2744,7 +2745,8 @@ void C_BaseEntity::HierarchySetParent( C_BaseEntity *pNewParent )
 //-----------------------------------------------------------------------------
 // Unlinks from hierarchy
 //-----------------------------------------------------------------------------
-void C_BaseEntity::SetParent( C_BaseEntity *pParentEntity, int iParentAttachment )
+#define SQ_FUNCTION() (void,C_BaseEntity,SetParent,( C_BaseEntity *pParentEntity, int iParentAttachment ))
+#include "squirrel/AddToBindings.h"
 {
 	// NOTE: This version is meant to be called *outside* of PostDataUpdate
 	// as it assumes the moveparent has a valid handle
@@ -2824,7 +2826,8 @@ void C_BaseEntity::UnlinkFromHierarchy()
 //-----------------------------------------------------------------------------
 // Purpose: Make sure that the correct model is referenced for this entity
 //-----------------------------------------------------------------------------
-void C_BaseEntity::ValidateModelIndex( void )
+#define SQ_FUNCTION() (void,C_BaseEntity,ValidateModelIndex,( void ))
+#include "squirrel/AddToBindings.h"
 {
 	SetModelByIndex( m_nModelIndex );
 }
@@ -3036,12 +3039,14 @@ bool C_BaseEntity::IsSelfAnimating()
 //-----------------------------------------------------------------------------
 // EFlags.. 
 //-----------------------------------------------------------------------------
-int C_BaseEntity::GetEFlags() const
+#define SQ_FUNCTION() (int,C_BaseEntity,GetEFlags,() const)
+#include "squirrel/AddToBindings.h"
 {
 	return m_iEFlags;
 }
 
-void C_BaseEntity::SetEFlags( int iEFlags )
+#define SQ_FUNCTION() (void,C_BaseEntity,SetEFlags,( int iEFlags ))
+#include "squirrel/AddToBindings.h"
 {
 	m_iEFlags = iEFlags;
 }
@@ -3686,7 +3691,8 @@ CollideType_t C_BaseEntity::GetCollideType( void )
 //-----------------------------------------------------------------------------
 // Is this a brush model?
 //-----------------------------------------------------------------------------
-bool C_BaseEntity::IsBrushModel() const
+#define SQ_FUNCTION() (bool,C_BaseEntity,IsBrushModel,() const)
+#include "squirrel/AddToBindings.h"
 {
 	int modelType = modelinfo->GetModelType( model );
 	return (modelType == mod_brush);

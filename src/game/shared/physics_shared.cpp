@@ -20,11 +20,14 @@
 #include "IEffects.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "particle_parse.h"
-
+#include "squirrel/squirrel.h"
 #include "physics_saverestore.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+#define SQ_CLASSNAME PhysicsShared
+#include "squirrel/StartLibrary.h"
 
 //
 IPhysics			*physics = NULL;
@@ -440,6 +443,11 @@ IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide 
 	return pObject;
 }
 
+TEMPORARY_TO_CPP(solid_t*)
+TEMPORARY_FROM_CPP(solid_t*)
+
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pEntity - 
@@ -448,7 +456,8 @@ IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide 
 //			&solid - 
 // Output : IPhysicsObject
 //-----------------------------------------------------------------------------
-IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid )
+#define SQ_FUNCTION() (IPhysicsObject*,PhysSphereCreate,( CBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid ))
+#include "squirrel/AddToBindings.h"
 {
 	if (!physenv)
 		return NULL;
@@ -468,12 +477,19 @@ IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vect
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void PhysGetDefaultAABBSolid( solid_t &solid )
+#define SQ_FUNCTION() (void,PhysGetDefaultAABBSolid,( solid_t &solid ))
+#include "squirrel/AddToBindings.h"
 {
 	solid.params = g_PhysDefaultObjectParams;
 	solid.params.mass = 85.0f;
 	solid.params.inertia = 1e24f;
 	Q_strncpy( solid.surfaceprop, "default", sizeof( solid.surfaceprop ) );
+}
+
+#define SQ_FUNCTION() (solid_t*,CreateSolid,())
+#include "squirrel/AddToBindings.h"
+{
+	return new solid_t();
 }
 
 //-----------------------------------------------------------------------------
@@ -1053,3 +1069,17 @@ void PrecachePhysicsSounds()
 }
 
 
+ENDSQFUNCTIONS
+
+#define SQ_CLASSNAME IPhysicsObject
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() IPhysicsObject,Wake
+#include "squirrel/AddInterfaceBinding.h"
+
+ENDSQDELEGATE
+
+
+
+TEMPORARY_TO_CPP(IPhysicsObject*)
+DELEGATE_FROM_CPP(IPhysicsObject)

@@ -89,11 +89,7 @@ static inline bool ConvertToCpp<CBaseEntity*>(SquirrelScript script, CBaseEntity
 	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id());
 }
 
-template <>
-static inline bool ConvertToCpp<QAngle*>(SquirrelScript script, QAngle** valOut, int a)
-{
-	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<QAngle*>::id());
-}
+TEMPORARY_TO_CPP(QAngle*)
 
 template <>
 static inline bool ConvertToCpp<Vector*>(SquirrelScript script, Vector** valOut, int a)
@@ -794,6 +790,12 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 
 }
 
+#define SQ_FUNCTION() (void,CBaseEntity,SetSolid,(SolidType_t val))
+#include "squirrel/AddToBindings.h"
+{
+	CollisionProp()->SetSolid(val);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Scale up our physics hull and test against the new one
 // Input  : *pNewCollide - New collision hull
@@ -1027,7 +1029,6 @@ Vector CBaseEntity::HeadTarget( const Vector &posSrc )
 //-----------------------------------------------------------------------------
 // Methods related to fade distance
 //-----------------------------------------------------------------------------
-#undef SQ_FUNCTION
 #define SQ_FUNCTION() (void,CBaseEntity,SetFadeDistance,( float minFadeDist, float maxFadeDist ))
 #include "squirrel/AddToBindings.h"
 {
@@ -1128,7 +1129,6 @@ void CBaseEntity::DrawRBoxOverlay()
 //-----------------------------------------------------------------------------
 // Purpose: Draws an axis overlay at the origin and angles of the entity
 //-----------------------------------------------------------------------------
-#undef SQ_FUNCTION
 #define SQ_FUNCTION() (void,CBaseEntity,SendDebugPivotOverlay,())
 #include "squirrel/AddToBindings.h"
 {
@@ -4024,7 +4024,8 @@ bool CBaseEntity::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, tr
 	}
 }
 
-void CBaseEntity::SetMoveType( MoveType_t val, MoveCollide_t moveCollide )
+#define SQ_FUNCTION() (void,CBaseEntity,SetMoveType,( MoveType_t val, MoveCollide_t moveCollide ))
+#include "squirrel/AddToBindings.h"
 {
 #ifdef _DEBUG
 	// Make sure the move type + move collide are compatible...
@@ -4156,6 +4157,9 @@ CBaseEntity* CBaseEntity::Instance( const CBaseHandle &hEnt )
 
 	return ed->m_fStateFlags;
 }
+
+#define SQ_FUNCTION() CBaseEntity,VPhysicsSetObject
+#include "squirrel/AddInterfaceBinding.h"
 
 int CBaseEntity::UpdateTransmitState()
 {
@@ -4934,7 +4938,8 @@ bool CBaseEntity::IsMoving()
 //			right - Receives the entity's right vector.
 //			up - Receives the entity's up vector.
 //-----------------------------------------------------------------------------
-void CBaseEntity::GetVectors(Vector* pForward, Vector* pRight, Vector* pUp) const
+#define SQ_FUNCTION() (void,CBaseEntity,GetVectors,(Vector* pForward, Vector* pRight, Vector* pUp) const)
+#include "squirrel/AddToBindings.h"
 {
 	// This call is necessary to cause m_rgflCoordinateFrame to be recomputed
 	const matrix3x4_t &entityToWorld = EntityToWorldTransform();
@@ -5169,6 +5174,11 @@ static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &ent
 	pTeleport->SetSolidFlags( nSolidFlags );
 }
 
+#define SQ_FUNCTION() (void,CBaseEntity,SetSolidFlags,(int flags))
+#include "squirrel/AddToBindings.h"
+{
+	CollisionProp()->SetSolidFlags(flags);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Recurses an entity hierarchy and fills out a list of all entities
@@ -6715,7 +6725,8 @@ matrix3x4_t& CBaseEntity::GetParentToWorldTransform( matrix3x4_t &tempMatrix )
 //-----------------------------------------------------------------------------
 // These methods recompute local versions as well as set abs versions
 //-----------------------------------------------------------------------------
-void CBaseEntity::SetAbsOrigin( const Vector& absOrigin )
+#define SQ_FUNCTION() (void,CBaseEntity,SetAbsOrigin,( const Vector& absOrigin ))
+#include "squirrel/AddToBindings.h"
 {
 	AssertMsg( absOrigin.IsValid(), "Invalid origin set" );
 	
@@ -6761,7 +6772,8 @@ void CBaseEntity::SetAbsOrigin( const Vector& absOrigin )
 	}
 }
 
-void CBaseEntity::SetAbsAngles( const QAngle& absAngles )
+#define SQ_FUNCTION() (void,CBaseEntity,SetAbsAngles,( const QAngle& absAngles ))
+#include "squirrel/AddToBindings.h"
 {
 	// This is necessary to get the other fields of m_rgflCoordinateFrame ok
 	CalcAbsolutePosition();
@@ -8756,7 +8768,8 @@ void CBaseEntity::NetworkQuantize( Vector &org, QAngle &angles )
 }
 
 //------------------------------------------------------------------------------
-bool CBaseEntity::ShouldLagCompensate() const
+#define SQ_FUNCTION() (bool,CBaseEntity,ShouldLagCompensate,() const)
+#include "squirrel/AddToBindings.h"
 {
 	return m_bLagCompensate;
 }

@@ -14,6 +14,7 @@
 #include "playernet_vars.h"
 #include "fogcontroller.h"
 #include "tier0/vprof.h"
+#include "squirrel_entity.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -277,8 +278,9 @@ void CPlayerLocalData::UpdateAreaBits( CBasePlayer *pl, unsigned char chAreaPort
 // Input  : player - 
 //-----------------------------------------------------------------------------
 
-void ClientData_Update( CBasePlayer *pl )
+void ClientData_Update( CSquirrelEntity *pl )
 {
+	/*
 	// HACKHACK: for 3d skybox 
 	// UNDONE: Support multiple sky cameras?
 	CSkyCamera *pSkyCamera = GetCurrentSkyCamera();
@@ -291,6 +293,7 @@ void ClientData_Update( CBasePlayer *pl )
 	{
 		pl->m_Local.m_skybox3d.area = 255;
 	}
+	*/
 }
 
 
@@ -301,11 +304,11 @@ void UpdateAllClientData( void )
 {
 	VPROF( "UpdateAllClientData" );
 	int i;
-	CBasePlayer *pl;
+	CSquirrelEntity *pl;
 
 	for ( i = 1; i <= gpGlobals->maxClients; i++ )
 	{
-		pl = ( CBasePlayer * )UTIL_PlayerByIndex( i );
+		pl = (CSquirrelEntity* )UTIL_PlayerByIndex( i );
 		if ( !pl )
 			continue;
 

@@ -3470,16 +3470,98 @@ bool C_BaseAnimating::ComputeStencilState( ShaderStencilState_t *pStencilState )
 #endif
 }
 
-TEMPORARY_TO_CPP(matrix3x4_t*)
-TEMPORARY_FROM_CPP(matrix3x4_t*)
 
+#define SQ_CLASSNAME Vector
+#include "squirrel/StartLibrary.h"
+
+int CONCAT(SQ_CLASSNAME, _Set)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	Vector** hello;
+	g_pSquirrel->GetStackUserData(script, 2, (void**)&hello, TypeIdentifier<Vector*>::id());
+	**yeah = **hello;
+	return 0;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Set), "Set");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+ENDSQDELEGATE
+
+
+#define SQ_CLASSNAME matrix3x4_t
+#include "squirrel/StartLibrary.h"
+
+
+int CONCAT(SQ_CLASSNAME, _Set)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	matrix3x4_t** yeah;
+	g_pSquirrel->GetStackUserData(script, 1,(void**)&yeah, TypeIdentifier<matrix3x4_t*>::id());
+	matrix3x4_t** hello;
+	g_pSquirrel->GetStackUserData(script, 2, (void**)&hello, TypeIdentifier<matrix3x4_t*>::id());
+	**yeah = **hello;
+	return 0;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Set), "Set");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+ENDSQDELEGATE
+
+#define SQ_CLASSNAME MatrixFunctions
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() (void,MatrixShear,(matrix3x4_t* a, Vector* shearAmount))
+#include "squirrel/AddToBindings.h"
+{
+	a->operator[](0)[1] += shearAmount->x;
+	a->operator[](1)[2] += shearAmount->y;
+	a->operator[](2)[0] += shearAmount->z;
+}
+
+ENDSQFUNCTIONS
+
+template <> bool ConvertToCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t** valOut, int a) {
+	extern ISquirrel* g_pSquirrel;
+	matrix3x4_t** temp;
+	if(g_pSquirrel->GetStackUserData(script, a, (void**)&temp, TypeIdentifier<matrix3x4_t*>::id()));
+	{
+		*valOut = *temp;
+		return true;
+	}
+	return false;
+}
+TEMPORARY_TO_CPP(Vector*)
+TEMPORARY_FROM_CPP(matrix3x4_t**)
 TEMPORARY_TO_CPP(matrix3x4_t**)
+
+template <>
+bool ConvertFromCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t* valIn)
+{
+	extern ISquirrel* g_pSquirrel;
+	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<matrix3x4_t*>::id());
+	g_pSquirrel->SetDelegate(script, matrix3x4_t_delegate);
+	return true;
+}
+
+
 
 TEMPORARY_TO_CPP(ModelRenderInfo_t*)
 TEMPORARY_TO_CPP(DrawModelState_t*)
 
 TEMPORARY_FROM_CPP(QAngle*)
-TEMPORARY_FROM_CPP(Vector*)
+
+template <> bool ConvertFromCpp<Vector*>(SquirrelScript script, Vector* valIn) {
+	extern ISquirrel* g_pSquirrel; 
+	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->SetDelegate(script, Vector_delegate);
+	return true;
+}
 
 TEMPORARY_FROM_CPP(IVModelRender*)
 

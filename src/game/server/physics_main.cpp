@@ -1813,7 +1813,7 @@ void CBaseEntity::PhysicsStep()
 	// UNDONE: this happens as the first frame for a bunch of things like dynamically created ents.
 	// can't remove until initial conditions are resolved
 	float deltaThink = thinktime - gpGlobals->curtime;
-	if ( thinktime <= 0 || deltaThink > 0.5 )
+	if ( thinktime < 0 || deltaThink > 0.5 )
 	{
 		PhysicsStepRunTimestep( gpGlobals->frametime );
 		PhysicsCheckWaterTransition();

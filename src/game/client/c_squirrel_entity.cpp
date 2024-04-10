@@ -53,6 +53,11 @@ bool C_SquirrelEntity::SetupBones(matrix3x4a_t* pBoneToWorldOut, int nMaxBones, 
     {
         return false;
     }
-    *pBoneToWorldOut = RenderableToWorldTransform();
+    SquirrelObject m = g_pSquirrel->PushPtr(script, pBoneToWorldOut, TypeIdentifier<matrix3x4_t*>::id());
+    extern SquirrelObject matrix3x4_t_delegate;
+    g_pSquirrel->SetDelegate(script, matrix3x4_t_delegate);
+    g_pSquirrel->CallObjectFunction(script, obj, "SetupBones", "o", &m);
+    g_pSquirrel->Pop(script);
+    //*pBoneToWorldOut = RenderableToWorldTransform();
     return true;
 }

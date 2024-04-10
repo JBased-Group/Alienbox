@@ -44,6 +44,7 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+#include <c_squirrel_entity.h>
 
 class CHudWeaponSelection;
 class CHudChat;
@@ -294,12 +295,13 @@ void ClientModeShared::Shutdown()
 bool ClientModeShared::CreateMove( float flInputSampleTime, CUserCmd *cmd )
 {
 	// Let the player override the view.
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_SquirrelEntity* pPlayer = (C_SquirrelEntity*)C_BasePlayer::GetLocalPlayer();
 	if(!pPlayer)
 		return true;
 
 	// Let the player at it
-	return pPlayer->CreateMove( flInputSampleTime, cmd );
+	//return pPlayer->CreateMove( flInputSampleTime, cmd );
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -315,7 +317,7 @@ void ClientModeShared::OverrideView( CViewSetup *pSetup )
 	if(!pPlayer)
 		return;
 
-	pPlayer->OverrideView( pSetup );
+	//pPlayer->OverrideView( pSetup );
 
 	if( ::input->CAM_IsThirdPerson() )
 	{
@@ -531,7 +533,7 @@ int	ClientModeShared::KeyInput( int down, ButtonCode_t keynum, const char *pszCu
 		return 0;
 	}
 
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_SquirrelEntity *pPlayer = (C_SquirrelEntity*)C_BasePlayer::GetLocalPlayer();
 
 	if ( IsJoystickCode( keynum ) )
 	{
@@ -539,12 +541,12 @@ int	ClientModeShared::KeyInput( int down, ButtonCode_t keynum, const char *pszCu
 	}
 
 	// if ingame spectator mode, let spectator input intercept key event here
-	if( pPlayer &&
-		( pPlayer->GetObserverMode() > OBS_MODE_DEATHCAM ) &&
-		!HandleSpectatorKeyInput( down, keynum, pszCurrentBinding ) )
-	{
-		return 0;
-	}
+	//if( pPlayer &&
+	//	( pPlayer->GetObserverMode() > OBS_MODE_DEATHCAM ) &&
+	//	!HandleSpectatorKeyInput( down, keynum, pszCurrentBinding ) )
+	//{
+	//	return 0;
+	//}
 
 	// Let game-specific hud elements get a crack at the key input
 	if ( !HudElementKeyInput( down, keynum, pszCurrentBinding ) )
@@ -552,11 +554,11 @@ int	ClientModeShared::KeyInput( int down, ButtonCode_t keynum, const char *pszCu
 		return 0;
 	}
 
-	C_BaseCombatWeapon *pWeapon = pPlayer ? pPlayer->GetActiveWeapon() : NULL;
-	if ( pWeapon )
-	{
-		return pWeapon->KeyInput( down, keynum, pszCurrentBinding );
-	}
+	//C_BaseCombatWeapon *pWeapon = pPlayer ? pPlayer->GetActiveWeapon() : NULL; // TODO : BIND THIS TO SQUIRREL PLEASE!
+	//if ( pWeapon )
+	//{
+	//	return pWeapon->KeyInput( down, keynum, pszCurrentBinding );
+	//}
 
 	return 1;
 }
