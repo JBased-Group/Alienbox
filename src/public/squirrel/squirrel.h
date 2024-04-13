@@ -118,6 +118,7 @@ public:
 	virtual void PushInt(SquirrelScript script, int val) = 0;
 	virtual void PushFloat(SquirrelScript script, float val) = 0;
 	virtual void PushString(SquirrelScript script, const char* val) = 0;
+	virtual void PushObject(SquirrelScript script, SquirrelObject obj) = 0;
 	virtual SquirrelObject PushPtr(SquirrelScript script, void* val, const int* typetag) = 0;
 	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr) = 0;
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes) = 0;
@@ -132,6 +133,7 @@ public:
 	virtual bool PushObjFunc(SquirrelScript script, SquirrelObject obj, const char* fun) = 0;
 	virtual bool Call(SquirrelScript script, int count) = 0;
 	virtual const char* GetName(SquirrelScript script, SquirrelObject obj) = 0;
+	virtual bool PushObjectValue(SquirrelScript script, SquirrelObject obj) = 0;
 };
 
 #define TEMPORARY_TO_CPP(type) \
@@ -186,7 +188,6 @@ struct SQBINDING
 	SquirrelClassDecl* classdcl = 0;
 	SquirrelDelegateDecl* delegatedcl = 0;
 };
-
 
 #define ENDSQCLASS \
 SquirrelObject CONCAT(SQ_CLASSNAME, _classobj); \
@@ -448,7 +449,7 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 	}
 	((Ret = Ret + GetType<Argument_Types>()), ...);
 	((Ret = Ret + TypeIdentifier<Argument_Types>::id()), ...);
-	((Ret = Ret + (void*)TypeIdentifier<Argument_Types>::ConvertToCpp), ...);
+	((Ret = Ret + (IsPointer<Argument_Types> ? (void*)TypeIdentifier<Argument_Types>::ConvertToCpp : (void*)TypeIdentifier<int>::ConvertToCpp)), ...);
 
 	return Ret;
 }
@@ -500,6 +501,12 @@ constexpr ReturnableString<sizeof...(Argument_Types) + 2> GetSignature(Return_Ty
 
 template <typename Return_Type, typename... Argument_Types>
 constexpr Return_Type (*GetOverloadedFunction(Return_Type(*f)(Argument_Types...)))(Argument_Types...) // LMAO
+{
+	return f;
+}
+
+template <typename Class_Name, typename Return_Type, typename... Argument_Types>
+constexpr Return_Type(Class_Name::*GetOverloadedFunction(Return_Type(Class_Name::*f)(Argument_Types...)))(Argument_Types...) // LMAO
 {
 	return f;
 }

@@ -1889,9 +1889,10 @@ int SQ_Vector(SquirrelScript script)
 	{
 		return 0;
 	}
-	SquirrelValue v = g_pSquirrel->InstantiateClass(script, SQVector);
-	g_pSquirrel->SetObjectUserdata(script, v.val_obj, new Vector(x, y, z), TypeIdentifier<Vector*>::id());
-	g_pSquirrel->PushValue(script, v);
+	ConvertFromCpp(script, new Vector(x, y, z));
+//	SquirrelValue v = g_pSquirrel->InstantiateClass(script, SQVector);
+//	g_pSquirrel->SetObjectUserdata(script, v.val_obj, new Vector(x, y, z), TypeIdentifier<Vector*>::id());
+//	g_pSquirrel->PushValue(script, v);
 	return 1;
 }
 

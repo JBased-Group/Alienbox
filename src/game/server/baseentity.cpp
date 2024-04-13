@@ -83,19 +83,24 @@
 
 extern ISquirrel* g_pSquirrel;
 
-template <>
-static inline bool ConvertToCpp<CBaseEntity*>(SquirrelScript script, CBaseEntity** valOut, int a)
-{
-	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id());
+template <> bool ConvertToCpp<CBaseEntity*>(SquirrelScript script, CBaseEntity** valOut, int a) {
+	extern ISquirrel* g_pSquirrel; 
+	if (g_pSquirrel->GetStackUserData(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id())) 
+	{
+		*(CBaseEntity***)valOut = **(CBaseEntity****)valOut;
+		return true;
+	}
+	// fallback to class instead of delegate
+	if (g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<CBaseEntity*>::id()))
+	{
+		return true;
+	}
+	return false;
 }
 
 TEMPORARY_TO_CPP(QAngle*)
 
-template <>
-static inline bool ConvertToCpp<Vector*>(SquirrelScript script, Vector** valOut, int a)
-{
-	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<Vector*>::id());
-}
+TEMPORARY_TO_CPP(Vector*)
 
 template <>
 static inline bool ConvertToCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t** valOut, int a)
@@ -103,7 +108,7 @@ static inline bool ConvertToCpp<matrix3x4_t*>(SquirrelScript script, matrix3x4_t
 	return g_pSquirrel->GetStackPtr(script, a, (void**)valOut, TypeIdentifier<matrix3x4_t*>::id());
 }
 
-#define LIBRARY_NAME CBaseEntityBindings
+#define SQ_CLASSNAME CBaseEntity
 #include "squirrel/StartLibrary.h"
 
 
@@ -789,6 +794,8 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	sqinstance.unused2 = 0;
 
 }
+
+
 
 #define SQ_FUNCTION() (void,CBaseEntity,SetSolid,(SolidType_t val))
 #include "squirrel/AddToBindings.h"
@@ -3645,6 +3652,13 @@ bool CBaseEntity::ClassMatchesComplex( const char *pszClassOrWildcard )
 	return EntityNamesMatch( pszClassOrWildcard, m_iClassname );
 }
 
+#define SQ_FUNCTION() (void,CBaseEntity,SetNextThink,(float nextThinkTime))
+#define SQ_OVERRIDE <CBaseEntity,void,float>
+#include "squirrel/AddToBindings.h"
+{
+	SetNextThink(nextThinkTime, (const char*)0);
+}
+
 void CBaseEntity::MakeDormant( void )
 {
 	AddEFlags( EFL_DORMANT );
@@ -4101,6 +4115,13 @@ bool CBaseEntity::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, tr
 	CheckHasGamePhysicsSimulation();
 }
 
+#define SQ_FUNCTION() CBaseEntity,SetGravity
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() CBaseEntity,GetGravity
+#include "squirrel/AddInterfaceBinding.h"
+
+
 void CBaseEntity::Spawn( void ) 
 {
 }
@@ -4352,7 +4373,6 @@ void CBaseEntity::ComputeWorldSpaceSurroundingBox( Vector *pMins, Vector *pMaxs 
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-#undef SQ_FUNCTION
 #define SQ_FUNCTION() (const char *,CBaseEntity,GetDebugName,())
 #include "squirrel/AddToBindings.h"
 {
@@ -4508,6 +4528,22 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 
 ConVar ent_messages_draw( "ent_messages_draw", "0", FCVAR_CHEAT, "Visualizes all entity input/output activity." );
 
+
+
+#define SQ_FUNCTION() CBaseEntity,VPhysicsInitNormal
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() (void,CBaseEntity,SetTouchFunc,(const char* funcname))
+#include "squirrel/AddToBindings.h"
+{
+	V_strncpy(((CSquirrelEntity*)this)->TouchFunc, funcname, 256);
+}
+
+#define SQ_FUNCTION() (void,CBaseEntity,SetThinkFunc,(const char* funcname))
+#include "squirrel/AddToBindings.h"
+{
+	V_strncpy(((CSquirrelEntity*)this)->ThinkFunc, funcname, 256);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: calls the appropriate message mapped function in the entity according
@@ -5101,6 +5137,14 @@ struct TeleportListEntry_t
 	QAngle prevAbsAngles;
 };
 
+#define SQ_FUNCTION() CBaseEntity,GetSolidFlags
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() CBaseEntity,AddSolidFlags
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() CBaseEntity,SetCollisionGroup
+#include "squirrel/AddInterfaceBinding.h"
 
 static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &entry, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
 {
@@ -5754,6 +5798,21 @@ HSCRIPT CBaseEntity::ScriptGetModelKeyValues( void )
 //   Entity degugging console commands
 extern void			SetDebugBits( CBasePlayer* pPlayer, const char *name, int bit );
 extern CBaseEntity *GetNextCommandEntity( CBasePlayer *pPlayer, const char *name, CBaseEntity *ent );
+
+int CBaseEntity_get(SquirrelScript script)
+{
+	CBaseEntity* ent;
+	ConvertToCpp(script, &ent, 1);
+	if (!g_pSquirrel->PushObjectValue(script, ((CSquirrelEntity*)ent)->obj))
+	{
+		return 0;
+	}
+	return 1;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CBaseEntity_get, "_get");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
 
 //------------------------------------------------------------------------------
 // Purpose :
@@ -6558,6 +6617,10 @@ model_t *CBaseEntity::GetModel( void )
 	return (model_t *)modelinfo->GetModel( GetModelIndex() );
 }
 
+
+#define SQ_FUNCTION() CBaseEntity,CollisionProp
+#define SQ_OVERRIDE <CBaseEntity,CCollisionProperty*>
+#include "squirrel/AddInterfaceBinding.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Calculates the absolute position of an edict in the world
@@ -8774,6 +8837,18 @@ void CBaseEntity::NetworkQuantize( Vector &org, QAngle &angles )
 	return m_bLagCompensate;
 }
 
+IPhysicsObject* CBaseEntity::VPhysicsGetObject(void) const
+{
+	return m_pPhysicsObject;
+}
+
+#define SQ_FUNCTION() CBaseEntity,VPhysicsGetObject
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() CBaseEntity,RemoveEFlags
+#include "squirrel/AddInterfaceBinding.h"
+
+
 
 //------------------------------------------------------------------------------
 // Purpose: Create an NPC of the given type
@@ -8801,9 +8876,10 @@ void CC_Ent_Create( const CCommand& args )
 			DispatchSpawn(entity);
 			// Now attempt to drop into the world
 			CBasePlayer* pPlayer = UTIL_GetCommandClient();
-			trace_t tr;
-			Vector forward;
-			pPlayer->EyeVectors( &forward );
+			//trace_t tr;
+			//Vector forward;
+			//pPlayer->EyeVectors( &forward );
+			/*
 #ifdef INFESTED_DLL
 			// BenLubar(sd2-ceiling-ents): use CASW_Trace_Filter to handle *_asw_fade properly
 			CASW_Trace_Filter filter( assert_cast< CASW_Player * >( pPlayer ), COLLISION_GROUP_NONE );
@@ -8815,13 +8891,14 @@ void CC_Ent_Create( const CCommand& args )
 				pPlayer->EyePosition() + forward * MAX_TRACE_LENGTH, MASK_SOLID,
 				pPlayer, COLLISION_GROUP_NONE, &tr );
 #endif
-			if ( tr.fraction != 1.0 )
-			{
+*/
+			//if ( tr.fraction != 1.0 )
+			//{
 				// Raise the end position a little up off the floor, place the npc and drop him down
-				tr.endpos.z += 12;
-				entity->Teleport( &tr.endpos, NULL, NULL );
-				UTIL_DropToFloor( entity, MASK_SOLID );
-			}
+			//	tr.endpos.z += 12;
+				entity->Teleport(&pPlayer->GetAbsOrigin(), NULL, NULL);
+				//UTIL_DropToFloor( entity, MASK_SOLID );
+			//}
 		}
 	}
 	CBaseEntity::SetAllowPrecache( allowPrecache );
@@ -8933,6 +9010,17 @@ void CC_Ent_Orient( const CCommand& args )
 	}
 }
 
+
+
+ENDSQDELEGATE
+
+template <> bool ConvertFromCpp<CBaseEntity*>(SquirrelScript script, CBaseEntity* valIn) {
+	extern ISquirrel* g_pSquirrel;
+	g_pSquirrel->PushPtr(script, valIn, TypeIdentifier<CBaseEntity*>::id());
+	g_pSquirrel->SetDelegate(script,CBaseEntity_delegate);
+	return true;
+}
+
 static ConCommand ent_orient("ent_orient", CC_Ent_Orient, "Orient the specified entity to match the player's angles. By default, only orients target entity's YAW. Use the 'allangles' option to orient on all axis.\n\tFormat: ent_orient <entity name> <optional: allangles>", FCVAR_CHEAT);
 /*
 int CBaseEntitySQConstructor(SquirrelScript script)
@@ -8946,6 +9034,7 @@ SquirrelObject SQCBaseEntity;
 static SquirrelClassDecl entc[] = { "CBaseEntity", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQCBaseEntity, TypeIdentifier<CBaseEntity*>::id(),
 
 "",nullptr,nullptr, nullptr };
+
 
 
 int SQ_CreateEntityByName(SquirrelScript script)

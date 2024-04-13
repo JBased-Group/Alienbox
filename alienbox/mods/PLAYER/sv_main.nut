@@ -1,4 +1,3 @@
-/*
 class CSquirrelCombatWeapon extends CBaseEntity
 {
 	function Spawn()
@@ -7,24 +6,39 @@ class CSquirrelCombatWeapon extends CBaseEntity
 		base.SetSolid(2);
 		base.RemoveEFlags(262144);
 		GiveDefaultAmmo();
-		base.SetModel(GetWorldModel());
+		base.PrecacheModel(GetWorldModel());
+		::UTIL_SetModel(this,GetWorldModel());
 		FallInit();
 		base.SetCollisionGroup(11);
-		base.CollisionProp().UseTriggerBounds(true,36);
+		base.CollisionProp().UseTriggerBounds(true,36.0);
+	}
+	
+	
+	
+	function GiveDefaultAmmo()
+	{
+	
 	}
 	
 	function FallInit()
 	{
-		base.VPhysicsDestroyObject();
-		if(!base.VPhysicsInitNormal(2, base.GetSolidFlags() | 8, false))
+		local solid = ::CreateSolid();
+		::PhysGetDefaultAABBSolid(solid);
+		if(!base.VPhysicsInitNormal(6, base.GetSolidFlags() | 8, false,solid))
 		{
 			base.SetMoveType(5);
 			base.SetSolid(2);
 			base.AddSolidFlags(8);
 		}
+		else
+		{
+			base.SetMoveType(6,0);
+			base.SetSolid(6);
+			base.AddSolidFlags(8);
+		}
 		
 		SetPickupTouch();
-		base.ThinkSet(FallThink,0,0);
+		base.SetThinkFunc("FallThink");
 		base.SetNextThink(0.1);
 	}
 	
@@ -35,7 +49,7 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	
 	function GetWorldModel()
 	{
-		return "models/weapons/w_portalgun.mdl"
+		return "models/weapons/plasmalauncher/plasmalauncher.mdl";
 	}
 	
 	function Precache()
@@ -75,12 +89,15 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	
 	function SetPickupTouch()
 	{
-		base.TouchSet(DefaultTouch);
+		base.SetTouchFunc("DefaultTouch");
 	}
 	
 	function DefaultTouch(pOther)
 	{
-	
+		if(pOther.test)
+		{
+			pOther.test();
+		}
 	}
 
 	function ItemPreFrame()
@@ -123,7 +140,7 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	
 	}
 	
-	function GetOWner()
+	function GetOwner()
 	{
 	
 	}
@@ -134,7 +151,8 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	}
 	
 }
-*/
+
+LinkEntityToClass("weapon_base",CSquirrelCombatWeapon);
 
 class CSquirrelPlayer extends CBaseEntity
 {
@@ -150,25 +168,45 @@ class CSquirrelPlayer extends CBaseEntity
 		local vphys = ::PhysSphereCreate(this,16.0,::CreateVector(0.0,0.0,0.0),solid);
 		base.VPhysicsSetObject(vphys);
 		vphys.Wake();
+		vphys.EnableGravity(0);
 		base.SetMoveType(6,0);
 		base.SetSolid(6);
 		base.AddSolidFlags(16);
+		base.SetCollisionGroup(5);
 	}
 	
 	function ProcessUsercmds(cmds,numcmds,totalcmds,dropped_packets,paused)
 	{
 		base.SetAbsAngles(cmds.Get_viewangles());
+		local va = ::QAngleVector(cmds.Get_viewangles());
+		x = ::VectorX(va);
+		y = ::VectorY(va);
 		local forward = ::CreateVector(0.0,0.0,0.0);
 		local right = ::CreateVector(0.0,0.0,0.0);
 		local up = ::CreateVector(0.0,0.0,0.0);
 		
 		base.GetVectors(forward,right,up);
-		::VectorScale(forward,cmds.Get_forwardmove(),forward);
-		::VectorScale(right,cmds.Get_sidemove(),right);
+		::VectorScale(forward,cmds.Get_forwardmove()*10.0,forward);
+		::VectorScale(right,cmds.Get_sidemove()*10.0,right);
 		::VectorAdd(forward,right,forward);
+		//::VectorAdd(forward,::CreateVector(0.0,0.0,600.0),forward);
 		
+		local vphys = base.VPhysicsGetObject();
+		vphys.ApplyForceCenter(forward);
 		//base.SetAbsVelocity(forward);
 	}
+	
+	function test()
+	{
+		local vphys = base.VPhysicsGetObject();
+		vphys.ApplyForceCenter(::CreateVector(0.0,0.0,6000.0));
+	}
+	
+	</ sendprop = true />
+	x = 0.0;
+	
+	</ sendprop = true />
+	y = 0.0;
 }
 
 LinkEntityToClass("player",CSquirrelPlayer);

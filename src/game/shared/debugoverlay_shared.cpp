@@ -12,6 +12,13 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+#ifdef CLIENT_DLL
+#include "c_squirrel_entity.h"
+#define CSquirrelEntity C_SquirrelEntity
+#else
+#include "squirrel_entity.h"
+#endif
+
 
 #define	MAX_OVERLAY_DIST_SQR	90000000
 
@@ -97,7 +104,7 @@ void NDebugOverlay::EntityBounds( const CBaseEntity *pEntity, int r, int g, int 
 
 static bool GetPlayerView( Vector &vecPosition, Vector &vecForward )
 {
-	CBasePlayer *player = GetLocalPlayer();
+	CSquirrelEntity *player = (CSquirrelEntity*)GetLocalPlayer();
 
 	if ( !player )
 	{
@@ -105,7 +112,9 @@ static bool GetPlayerView( Vector &vecPosition, Vector &vecForward )
 		return false;
 	}
 
-	player->EyePositionAndVectors( &vecPosition, &vecForward, NULL, NULL );
+	//player->EyePositionAndVectors( &vecPosition, &vecForward, NULL, NULL );
+	vecPosition = player->GetAbsOrigin();
+	player->GetVectors(&vecForward, 0, 0);
 	return true;
 }
 

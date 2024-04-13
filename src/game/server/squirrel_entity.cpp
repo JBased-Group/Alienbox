@@ -36,7 +36,39 @@ void CSquirrelEntity::Spawn()
 
 void CSquirrelEntity::Think()
 {
-	g_pSquirrel->CallObjectFunction(script, obj, "Think", "");
+	if (!ThinkFunc[0])
+	{
+		return;
+	}
+	if (!g_pSquirrel->PushObjFunc(script, obj, ThinkFunc))
+	{
+		return;
+	}
+	g_pSquirrel->Call(script, 1);
+	g_pSquirrel->Pop(script);
+}
+
+void CSquirrelEntity::Touch(CBaseEntity* pOther)
+{
+	if (!TouchFunc[0])
+	{
+		return;
+	}
+	if (!g_pSquirrel->PushObjFunc(script, obj, TouchFunc))
+	{
+		return;
+	}
+	CSquirrelEntity* sqother = dynamic_cast<CSquirrelEntity*>(pOther);
+	if (sqother)
+	{
+		g_pSquirrel->PushObject(script,sqother->obj);
+	}
+	else
+	{
+		ConvertFromCpp(script, pOther);
+	}
+	g_pSquirrel->Call(script, 2);
+	g_pSquirrel->Pop(script);
 }
 
 int CSquirrelEntity::UpdateTransmitState()

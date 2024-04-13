@@ -1905,7 +1905,8 @@ IClientRenderable *C_BaseEntity::NextShadowPeer()
 // Purpose: Returns index into entities list for this entity
 // Output : Index
 //-----------------------------------------------------------------------------
-int	C_BaseEntity::entindex( void ) const
+#define SQ_FUNCTION() (int,C_BaseEntity,entindex,( void ) const)
+#include "squirrel/AddToBindings.h"
 {
 	return index;
 }
@@ -2057,7 +2058,8 @@ const Vector& C_BaseEntity::GetNetworkOrigin() const
 // Purpose: 
 // Output : const QAngle&
 //-----------------------------------------------------------------------------
-const QAngle& C_BaseEntity::GetNetworkAngles() const
+#define SQ_FUNCTION() (const QAngle&,C_BaseEntity,GetNetworkAngles,() const)
+#include "squirrel/AddToBindings.h"
 {
 	return m_angNetworkAngles;
 }
@@ -3030,7 +3032,8 @@ C_BasePlayer* C_BaseEntity::GetPredictionOwner()
 	return pOwner;
 }
 
-bool C_BaseEntity::IsSelfAnimating()
+#define SQ_FUNCTION() (bool,C_BaseEntity,IsSelfAnimating,())
+#include "squirrel/AddToBindings.h"
 {
 	return true;
 }

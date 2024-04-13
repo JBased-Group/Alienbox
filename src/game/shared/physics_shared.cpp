@@ -320,6 +320,7 @@ IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vec
 	{
 		surfaceProp = physprops->GetSurfaceIndex( pSolid->surfaceprop );
 	}
+	pSolid->params.pGameData = pEntity;
 	IPhysicsObject *pObject = physenv->CreatePolyObject( pCollide->solids[pSolid->index], surfaceProp, origin, angles, &pSolid->params );
 	//PhysCheckAdd( pObject, STRING(pEntity->m_iClassname) );
 
@@ -1075,6 +1076,15 @@ ENDSQFUNCTIONS
 #include "squirrel/StartLibrary.h"
 
 #define SQ_FUNCTION() IPhysicsObject,Wake
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() IPhysicsObject,EnableGravity
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() IPhysicsObject,ApplyForceCenter
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() IPhysicsObject,ApplyTorqueCenter
 #include "squirrel/AddInterfaceBinding.h"
 
 ENDSQDELEGATE

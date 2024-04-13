@@ -53,6 +53,7 @@ public:
 	CSquirrelEntity(SquirrelObject sqobj, SquirrelScript sqscript);
 	virtual void Spawn();
 	virtual void Think();
+	virtual void Touch(CBaseEntity* pOther);
 	virtual int UpdateTransmitState();
 
 	template <typename ReturnType, typename... ArgumentTypes>
@@ -142,6 +143,8 @@ public:
 	SquirrelScript script;
 	datamap_t* m_dataMap;
 	ServerClass* m_serverClass;
+	char TouchFunc[256];
+	char ThinkFunc[256];
 };
 
 inline CSquirrelEntity* ToSquirrelPlayer(CBaseEntity* player)

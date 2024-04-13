@@ -15,6 +15,7 @@ bool DesiredApp(int appid)
 	{
 	case 563560: //asw:rd
 	case 620: //p2
+	case 550: //l4d2
 		return true;
 	default:
 		return false;
@@ -105,6 +106,12 @@ void GetAppManifest(const char* appid, const char* path)
 		PatchSearchPath(searchpaths, "portal2_dlc1", appDir);
 		PatchSearchPath(searchpaths, "portal2_dlc2", appDir);
 		PatchSearchPath(searchpaths, "update", appDir);
+		break;
+	case 550: //l4d2
+		PatchSearchPath(searchpaths, "left4dead2_dlc3", appDir);
+		PatchSearchPath(searchpaths, "left4dead2_dlc2", appDir);
+		PatchSearchPath(searchpaths, "left4dead2_dlc1", appDir);
+		PatchSearchPath(searchpaths, "left4dead2", appDir);
 		break;
 	case 563560: //asw:rd
 		PatchSearchPath(searchpaths, "reactivedrop", appDir);

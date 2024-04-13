@@ -336,11 +336,15 @@ public:
 
 	// non-virtual methods. Don't override these!
 public:
+
 	// An inline version the game code can use
 	CCollisionProperty		 *CollisionProp();
 	const CCollisionProperty *CollisionProp() const;
 	CServerNetworkProperty   *NetworkProp();
 	const CServerNetworkProperty *NetworkProp() const;
+
+	void SetTouchFunc(const char* funcname);
+	void SetThinkFunc(const char* funcname);
 
 	bool					IsCurrentlyTouching( void ) const;
 	const Vector&			GetAbsOrigin( void ) const;
@@ -720,7 +724,8 @@ public:
 	// Think functions with contexts
 	int		RegisterThinkContext( const char *szContext );
 	BASEPTR	ThinkSet( BASEPTR func, float flNextThinkTime = 0, const char *szContext = NULL );
-	void	SetNextThink( float nextThinkTime, const char *szContext = NULL );
+	void	SetNextThink( float nextThinkTime, const char *szContext );
+	void	SetNextThink( float nextThinkTime );
 	float	GetNextThink( const char *szContext = NULL );
 	float	GetLastThink( const char *szContext = NULL );
 	int		GetNextThinkTick( const char *szContext = NULL );
@@ -1417,7 +1422,7 @@ public:
 	virtual void	VPhysicsDestroyObject( void );
 	void			VPhysicsSwapObject( IPhysicsObject *pSwap );
 
-	inline IPhysicsObject *VPhysicsGetObject( void ) const { return m_pPhysicsObject; }
+	IPhysicsObject* VPhysicsGetObject(void) const;
 	virtual void	VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void			VPhysicsUpdatePusher( IPhysicsObject *pPhysics );
 	float			VPhysicsGetNonShadowMass( void ) const { return m_flNonShadowMass; }
@@ -2509,6 +2514,8 @@ inline void CBaseEntity::SetTextureFrameIndex( int iIndex )
 {
 	m_iTextureFrameIndex = iIndex;
 }
+
+
 
 //-----------------------------------------------------------------------------
 // An inline version the game code can use

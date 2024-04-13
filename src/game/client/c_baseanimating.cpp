@@ -3489,6 +3489,52 @@ constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COU
 #include INCREMENT_COUNTER_A
 #include INCREMENT_COUNTER_B
 
+
+int CONCAT(SQ_CLASSNAME, _X)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushFloat(script,(**yeah).x);
+	return 1;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _X), "X");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+
+
+int CONCAT(SQ_CLASSNAME, _Y)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushFloat(script, (**yeah).y);
+	return 1;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Y), "Y");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+int CONCAT(SQ_CLASSNAME, _Z)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushFloat(script, (**yeah).z);
+	return 1;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Z), "Z");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+
 ENDSQDELEGATE
 
 

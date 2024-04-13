@@ -27,9 +27,19 @@ if constexpr (count > a) \
 		if(!g_pSquirrel->GetStackString(script, a + 1, &argi[a - 1].v_s)) \
 			return 0; \
 	} \
+	else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[a] == 'b') \
+	{ \
+		if(!g_pSquirrel->GetStackInt(script, a + 1, &argi[a - 1].v_i)) \
+			return 0; \
+	} \
 	else if constexpr (CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)[a] == 'p') \
 	{ \
 		if(!((GenericConverterToCpp)(((void* (*)())CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG).ConvertCpp[a])()))(script,&argi[a-1].v_p, a + 1)) \
+			return 0; \
+	} \
+	else \
+	{ \
+		if (!g_pSquirrel->GetStackInt(script, a + 1, &argi[a - 1].v_i)) \
 			return 0; \
 	} \
 }

@@ -957,6 +957,11 @@ int CCollisionEvent::ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObje
 {
 	CallbackContext check(this);
 	
+	if (!pGameData0 || !pGameData1) // relt: Happens to the best of us
+	{
+		return false;
+	}
+
 	// Pointers to the entity for each physics object
 	CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pGameData0);
 	CBaseEntity *pEntity1 = static_cast<CBaseEntity *>(pGameData1);
@@ -2839,6 +2844,10 @@ void DebugDrawContactPoints(IPhysicsObject *pPhysics)
 		NDebugOverlay::Line( pt, pt - normal * 20, 0, 255, 0, false, 0 );
 		IPhysicsObject *pOther = pSnapshot->GetObject(1);
 		CBaseEntity *pEntity0 = static_cast<CBaseEntity *>(pOther->GetGameData());
+		if (!pEntity0)
+		{
+			return;
+		}
 		CFmtStr str("%s (%s): %s [%0.2f]", pEntity0->GetClassname(), STRING(pEntity0->GetModelName()), pEntity0->GetDebugName(), pSnapshot->GetFrictionCoefficient() );
 		NDebugOverlay::Text( pt, str.Access(), false, 0 );
 		pSnapshot->NextFrictionData();

@@ -72,7 +72,7 @@ public:
 	}
 
 	template <typename ReturnType, typename... ArgumentTypes>
-	ReturnType CallFunction(const char* funcname, ArgumentTypes...)
+	ReturnType CallFunction(const char* funcname, ArgumentTypes... ...)
 	{
 		extern ISquirrel* g_pSquirrel;
 		constexpr ReturnableString<sizeof...(ArgumentTypes) + 2> types = GetSig<ReturnType, ArgumentTypes...>();

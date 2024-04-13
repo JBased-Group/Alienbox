@@ -1,6 +1,11 @@
 #pragma message(STRINGG(SQ_FUNCTION()))
 SQ_FUNCTION_DECLFUNC(SQ_FUNCTION())
+
+#ifdef SQ_OVERRIDE
+static constexpr auto CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG) = CONCAT(GetSignature,SQ_OVERRIDE)(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()));
+#else
 static constexpr auto CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG) = GetSignature(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()));
+#endif
 
 #define GetStackArg(a) \
 if constexpr (count > a) \
@@ -277,7 +282,11 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION())(SquirrelScript script)
 {
 	extern ISquirrel* g_pSquirrel;
 	static constexpr unsigned int count = sizeof(CONCAT(CONCAT(LIBRARY_NAME, COUNTER_A), _SIG)).Data - 1;
+#ifdef SQ_OVERRIDE
+	constexpr auto func = CONCAT(GetOverloadedFunction, SQ_OVERRIDE)(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()));
+#else
 	constexpr auto func = &SQ_FUNCTION_CLSNAME(SQ_FUNCTION());
+#endif
 	if constexpr (Same<Class_Name, void>)
 	{
 		if constexpr (count == 1)
@@ -310,7 +319,11 @@ int SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION())(SquirrelScript script)
 			GetStackArg(11)
 			GetStackArg(12)
 
-			if constexpr (IsCDecl(func, func))
+#ifdef SQ_OVERRIDE
+			if constexpr (CONCAT(IsCDecl, SQ_OVERRIDE)(SQ_FUNCTION_CLSNAME(SQ_FUNCTION())))
+#else
+			if constexpr (IsCDecl(SQ_FUNCTION_CLSNAME(SQ_FUNCTION())))
+#endif
 			{
 				CallWithConvNoObj(__cdecl)
 			}
@@ -392,10 +405,16 @@ constexpr auto SQ_FUNCTION_CLS_NAME_EXPAND(SQ_FUNCTION())(Return_Type(*)(Argumen
 	return &SQ_FUNCTION_CLS_NAME_WRAPPED(SQ_FUNCTION()) < void, Return_Type > ;
 }
 
+#ifdef SQ_OVERRIDE
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), (CONCAT(SQ_FUNCTION_CLS_NAME_EXPAND(SQ_FUNCTION()),SQ_OVERRIDE)(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()))), STRINGG(SQ_FUNCTION_NAME(SQ_FUNCTION())));
+#else
 constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), (SQ_FUNCTION_CLS_NAME_EXPAND(SQ_FUNCTION())(&SQ_FUNCTION_CLSNAME(SQ_FUNCTION()))), STRINGG(SQ_FUNCTION_NAME(SQ_FUNCTION())));
+#endif
+
 #include INCREMENT_COUNTER_A
 #include INCREMENT_COUNTER_B
 
 
 SQ_FUNCTION_DECL(SQ_FUNCTION())
 #undef SQ_FUNCTION
+#undef SQ_OVERRIDE

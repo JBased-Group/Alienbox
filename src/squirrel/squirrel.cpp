@@ -35,6 +35,7 @@ public:
 	virtual void PushInt(SquirrelScript script, int val);
 	virtual void PushFloat(SquirrelScript script, float val);
 	virtual void PushString(SquirrelScript script, const char* val);
+	virtual void PushObject(SquirrelScript script, SquirrelObject obj);
 	virtual SquirrelObject PushPtr(SquirrelScript script, void* val, const int* typetag);
 	virtual bool GetStackObjectUserdata(SquirrelScript script, void** ptr);
 	virtual void RegisterClasses(SquirrelScript script, SquirrelClassDecl* classes);
@@ -49,6 +50,7 @@ public:
 	virtual bool PushObjFunc(SquirrelScript script, SquirrelObject obj, const char* fun);
 	virtual bool Call(SquirrelScript script, int count);
 	virtual const char* GetName(SquirrelScript script, SquirrelObject obj);
+	virtual bool PushObjectValue(SquirrelScript script, SquirrelObject obj);
 };
 
 
@@ -126,6 +128,11 @@ void CSquirrel::PushString(SquirrelScript script, const char* val)
 	sq_pushstring((HSQUIRRELVM)script, val, -1);
 }
 
+void CSquirrel::PushObject(SquirrelScript script, SquirrelObject obj)
+{
+	sq_pushobject((HSQUIRRELVM)script, *(HSQOBJECT*)&obj);
+}
+
 SquirrelObject CSquirrel::PushPtr(SquirrelScript script, void* val, const int* typetag)
 {
 	*(void**)sq_newuserdata((HSQUIRRELVM)script, 4) = val;
@@ -153,9 +160,10 @@ void CSquirrel::RegisterDelegates(SquirrelScript script, SquirrelDelegateDecl* d
 	HSQUIRRELVM v = (HSQUIRRELVM)script;
 	while (delegates->funcs)
 	{
-		sq_pushstring(v, delegates->name, -1);
+		//sq_pushstring(v, delegates->name, -1);
 		sq_newtable(v);
 		sq_getstackobj(v, -1, (HSQOBJECT*)delegates->delegateobj);
+		sq_addref(v, (HSQOBJECT*)delegates->delegateobj);
 		while (delegates->funcs->ptr)
 		{
 			if (!delegates->funcs->name)
@@ -170,7 +178,8 @@ void CSquirrel::RegisterDelegates(SquirrelScript script, SquirrelDelegateDecl* d
 			sq_newslot(v, -3, false);
 			delegates->funcs++;
 		}
-		sq_newslot(v, -3, false);
+		//sq_newslot(v, -3, false);
+		
 		delegates++;
 	}
 }
@@ -476,24 +485,26 @@ SendTable* CSquirrel::GenerateSendtable(SquirrelScript script, SquirrelObject ob
 				{
 				case OT_FLOAT:
 					prop = SendPropFloat(value, objOffset,4,32,0,0.0f, HIGH_DEFAULT,SendProxy_SquirrelToFloat);
-					allocedkey = (char*)MemAlloc_Alloc(strlen(key)+1);
-					strcpy(allocedkey, key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(value)+1);
+					strcpy(allocedkey, value);
 					prop.SetExtraData(allocedkey);
 					break;
 				case OT_INTEGER:
 					prop = SendPropInt(value, objOffset,4,-1,0,SendProxy_SquirrelToInt);
-					allocedkey = (char*)MemAlloc_Alloc(strlen(key) + 1);
-					strcpy(allocedkey, key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(value) + 1);
+					strcpy(allocedkey, value);
 					prop.SetExtraData(allocedkey);
 					break;
 				default:
 					continue;
 				}
 				sendprops.AddToTail(prop);
+				sq_pop(v, 2);
 				break;
 			}
+			sq_pop(v, 2);
 		}
-		sq_pop(v, 1);
+		sq_pop(v, 2);
 	}
 	SendProp* props = (SendProp*)MemAlloc_Alloc(sendprops.Count() * sizeof(SendProp));
 	memcpy(props, sendprops.Base(), sendprops.Count() * sizeof(SendProp));
@@ -548,6 +559,21 @@ const char* CSquirrel::GetName(SquirrelScript script, SquirrelObject obj)
 	return 0;
 }
 
+bool CSquirrel::PushObjectValue(SquirrelScript script, SquirrelObject obj)
+{
+	if (sq_gettype((HSQUIRRELVM)script, -2) == OT_USERDATA)
+	{
+		sq_getdelegate((HSQUIRRELVM)script, -2);
+		sq_remove((HSQUIRRELVM)script, -3);
+		HSQOBJECT po;
+		sq_getstackobj((HSQUIRRELVM)script, -2, &po);
+		sq_pushobject((HSQUIRRELVM)script, po);
+		sq_remove((HSQUIRRELVM)script, -3);
+		return SQ_SUCCEEDED(sq_rawget((HSQUIRRELVM)script, -2));
+	}
+	return SQ_SUCCEEDED(sq_rawget((HSQUIRRELVM)script, -2));
+}
+
 RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject obj, RecvTable* basemap, size_t objOffset, const char* name)
 {
 	HSQUIRRELVM v = (HSQUIRRELVM)script;
@@ -588,24 +614,26 @@ RecvTable* CSquirrel::GenerateRecvtable(SquirrelScript script, SquirrelObject ob
 				{
 				case OT_FLOAT:
 					prop = RecvPropFloat(value, objOffset, 4, 0, RecvProxy_FloatToSquirrel);
-					allocedkey = (char*)MemAlloc_Alloc(strlen(key) + 1);
-					strcpy(allocedkey, key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(value) + 1);
+					strcpy(allocedkey, value);
 					prop.SetExtraData(allocedkey);
 					break;
 				case OT_INTEGER:
 					prop = RecvPropInt(value, objOffset, 4, 0, RecvProxy_IntToSquirrel);
-					allocedkey = (char*)MemAlloc_Alloc(strlen(key) + 1);
-					strcpy(allocedkey, key);
+					allocedkey = (char*)MemAlloc_Alloc(strlen(value) + 1);
+					strcpy(allocedkey, value);
 					prop.SetExtraData(allocedkey);
 					break;
 				default:
 					continue;
 				}
 				recvprops.AddToTail(prop);
+				sq_pop(v, 2);
 				break;
 			}
+			sq_pop(v, 2);
 		}
-		sq_pop(v, 1);
+		sq_pop(v, 2);
 	}
 	RecvProp* props = (RecvProp*)MemAlloc_Alloc(recvprops.Count() * sizeof(RecvProp));
 	memcpy(props, recvprops.Base(), recvprops.Count() * sizeof(RecvProp));
@@ -627,7 +655,7 @@ SquirrelValue CSquirrel::InstantiateClass(SquirrelScript script, SquirrelObject 
 		sq_getlasterror(v);
 		const char* err;
 		sq_getstring(v, -1, &err);
-		Msg("%s\n",err);
+		Msg("[ERROR" STRINGG(__LINE__) "] %s\n",err);
 
 		ret.type = SQUIRREL_INVALID;
 		return ret;
@@ -787,7 +815,7 @@ SquirrelValue CSquirrel::CallObjectFunction(SquirrelScript script, SquirrelObjec
 		sq_getlasterror(v);
 		const char* err;
 		sq_getstring(v, -1, &err);
-		Msg("%s\n", err);
+		Msg("[ERROR" STRINGG(__LINE__) "] %s\n", err);
 		sq_pop(v, 1);
 		return ret;
 	}
@@ -846,7 +874,16 @@ SquirrelScript CSquirrel::LoadScript(const char* script, SquirrelFunctionDecl* i
 	sqregfunc(v);
 	sqstd_register_mathlib(v);
 	sqstd_register_stringlib(v);
-	sq_compilebuffer(v, script, strlen(script),"squirrel",SQTrue);
+	if (SQ_FAILED(sq_compilebuffer(v, script, strlen(script), "squirrel", SQTrue)))
+	{
+		sq_getlasterror(v);
+		const char* err;
+		sq_getstring(v, -1, &err);
+		Msg("[ERROR] [COMPILE] %s\n", err);
+		return 0;
+	}
+
+	
 
 	sq_pushroottable(v);
 	SQRESULT callres = sq_call(v, 1, false, true);
@@ -862,6 +899,10 @@ SquirrelScript CSquirrel::LoadScript(const char* script, SquirrelFunctionDecl* i
 	sq_collectgarbage(v);
 	if (SQ_FAILED(callres))
 	{
+		sq_getlasterror(v);
+		const char* err;
+		sq_getstring(v, -1, &err);
+		Msg("[ERROR] [SCRIPT] %s\n", err);
 		return 0;
 	}
 	return (SquirrelScript)v;

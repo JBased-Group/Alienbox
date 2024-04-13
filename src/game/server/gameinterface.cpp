@@ -1016,7 +1016,6 @@ public:
 		newEnt->m_serverClass = serverclass;
 		g_pSquirrel->SetObjectUserdata(thescript, sqobj.val_obj, newEnt, TypeIdentifier<CBaseEntity*>::id());
 		newEnt->PostConstructor(pClassName);
-		Msg("%x\n", newEnt->NetworkProp()->GetServerClass());
 		return newEnt->NetworkProp();
 	}
 
@@ -1055,33 +1054,86 @@ int SQ_LinkEntityToClass(SquirrelScript script)
 	return 0;
 }
 
-#define LIBRARY_NAME VectorBindings
-constexpr ListOfStuff<1> VectorBindings0x0000 = { 0,0 };
-SquirrelObject SQVector;
 
 
+#define SQ_CLASSNAME Vector
+#include "squirrel/StartLibrary.h"
 
-int SQ_Vector(SquirrelScript script)
+int CONCAT(SQ_CLASSNAME, _Set)(SquirrelScript script)
 {
-	float x, y, z;
-	if (!g_pSquirrel->GetArgs(script, "fff", &x, &y, &z))
-	{
-		return 0;
-	}
-	SquirrelValue v = g_pSquirrel->InstantiateClass(script, SQVector);
-	g_pSquirrel->SetObjectUserdata(script, v.val_obj, new Vector(x, y, z), TypeIdentifier<Vector*>::id());
-	g_pSquirrel->PushValue(script, v);
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	Vector** hello;
+	g_pSquirrel->GetStackUserData(script, 2, (void**)&hello, TypeIdentifier<Vector*>::id());
+	**yeah = **hello;
+	return 0;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Set), "Set");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+int CONCAT(SQ_CLASSNAME, _X)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushFloat(script, (**yeah).x);
 	return 1;
 }
 
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _X), "X");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+
+
+int CONCAT(SQ_CLASSNAME, _Y)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushFloat(script, (**yeah).y);
+	return 1;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Y), "Y");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+int CONCAT(SQ_CLASSNAME, _Z)(SquirrelScript script)
+{
+	extern ISquirrel* g_pSquirrel;
+	Vector** yeah;
+	g_pSquirrel->GetStackUserData(script, 1, (void**)&yeah, TypeIdentifier<Vector*>::id());
+	g_pSquirrel->PushFloat(script, (**yeah).z);
+	return 1;
+}
+
+constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CONCAT(SQ_CLASSNAME, _Z), "Z");
+#include INCREMENT_COUNTER_A
+#include INCREMENT_COUNTER_B
+
+
+
+ENDSQDELEGATE
+
 SQBINDING* sq_bindings = 0;
 
-static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Data, &SQVector, TypeIdentifier<Vector*>::id(),
-
-"",nullptr,nullptr,nullptr };
+TEMPORARY_FROM_CPP(Vector*)
 
 #define SQ_CLASSNAME VectorLol
 #include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() (Vector*,CreateVector,(float x, float y, float z))
+#include "squirrel/AddToBindings.h"
+{
+	return new Vector(x, y, z);
+}
 
 #define SQ_FUNCTION() VectorScale
 #define SQ_OVERRIDE <void,const Vector&,vec_t,Vector&>
@@ -1091,6 +1143,30 @@ static SquirrelClassDecl entc[] = { "Vector", CONCAT(LIBRARY_NAME, COUNTER_B).Da
 #define SQ_OVERRIDE <void,const Vector&,const Vector&,Vector&>
 #include "squirrel/AddInterfaceBinding.h"
 
+#define SQ_FUNCTION() (float,VectorX,(Vector* h))
+#include "squirrel/AddToBindings.h"
+{
+	return h->x;
+}
+
+#define SQ_FUNCTION() (float,VectorY,(Vector* h))
+#include "squirrel/AddToBindings.h"
+{
+	return h->y;
+}
+
+#define SQ_FUNCTION() (float,VectorZ,(Vector* h))
+#include "squirrel/AddToBindings.h"
+{
+	return h->z;
+}
+
+#define SQ_FUNCTION() (Vector*,QAngleVector,(QAngle* h))
+#include "squirrel/AddToBindings.h"
+{
+	return (Vector*)h;
+}
+
 ENDSQFUNCTIONS
 
 TEMPORARY_FROM_CPP(QAngle*)
@@ -1099,8 +1175,6 @@ extern void RegisterCBaseCombatWeaponSquirrelFunctions(SquirrelScript script);
 
 void RegisterAllSquirrel(SquirrelScript script)
 {
-	g_pSquirrel->AddFunction(script, "CreateVector", SQ_Vector);
-	g_pSquirrel->RegisterClasses(script, entc);
 	RegisterCBaseEntitySquirrelFunctions(script);
 
 	while (sq_bindings)

@@ -917,6 +917,8 @@ void CBaseEntity::SetNextThink( float thinkTime, const char *szContext )
 	CheckHasThinkFunction( thinkTick == TICK_NEVER_THINK ? false : true );
 }
 
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -1236,6 +1238,8 @@ int CheckEntityVelocity( Vector &v )
 	// A terrible, horrible, no good, very bad velocity.
 	return -1;
 }
+
+
 
 
 //-----------------------------------------------------------------------------

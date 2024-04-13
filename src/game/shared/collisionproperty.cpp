@@ -28,6 +28,7 @@
 #include "hierarchy.h"
 #endif
 
+#include "squirrel/squirrel.h"
 #include "predictable_entity.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -1442,4 +1443,13 @@ void CCollisionProperty::UpdatePartition( )
 	}
 }
 
+#define SQ_CLASSNAME CCollisionProperty
+#include "squirrel/StartLibrary.h"
 
+#define SQ_FUNCTION() CCollisionProperty,UseTriggerBounds
+#include "squirrel/AddInterfaceBinding.h"
+
+ENDSQDELEGATE
+
+DELEGATE_FROM_CPP(CCollisionProperty)
+TEMPORARY_TO_CPP(CCollisionProperty*)
