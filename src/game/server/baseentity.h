@@ -345,6 +345,8 @@ public:
 
 	void SetTouchFunc(const char* funcname);
 	void SetThinkFunc(const char* funcname);
+	void RemoveTouchFunc();
+	void RemoveThinkFunc();
 
 	bool					IsCurrentlyTouching( void ) const;
 	const Vector&			GetAbsOrigin( void ) const;

@@ -94,10 +94,23 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	
 	function DefaultTouch(pOther)
 	{
-		if(pOther.test)
+		if(pOther.BumpWeapon)
 		{
-			pOther.test();
+			pOther.BumpWeapon(this);
 		}
+	}
+
+	function Equip(owner)
+	{
+		base.RemoveSolidFlags(8);
+		base.FollowEntity(owner,true);
+		SetOwner(owner);
+		base.SetOwnerEntity(owner);
+		base.RemoveThinkFunc();
+		base.RemoveTouchFunc();
+		base.VPhysicsDestroyObject();
+		
+		
 	}
 
 	function ItemPreFrame()
@@ -142,13 +155,15 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	
 	function GetOwner()
 	{
-	
+		return m_hOwner
 	}
 	
-	function SetOwner()
+	function SetOwner(owner)
 	{
-	
+		m_hOwner = owner
 	}
+	
+	m_hOwner = null;
 	
 }
 
@@ -196,10 +211,16 @@ class CSquirrelPlayer extends CBaseEntity
 		//base.SetAbsVelocity(forward);
 	}
 	
-	function test()
+	function BumpWeapon(pWeapon)
 	{
-		local vphys = base.VPhysicsGetObject();
-		vphys.ApplyForceCenter(::CreateVector(0.0,0.0,6000.0));
+		pWeapon.AddSolidFlags(4);
+		Weapon_Equip(pWeapon);
+	}
+	
+	function Weapon_Equip(pWeapon)
+	{
+		m_hMyWeapons.append(pWeapon);
+		pWeapon.Equip(this);
 	}
 	
 	</ sendprop = true />
@@ -207,6 +228,8 @@ class CSquirrelPlayer extends CBaseEntity
 	
 	</ sendprop = true />
 	y = 0.0;
+	
+	m_hMyWeapons = [];
 }
 
 LinkEntityToClass("player",CSquirrelPlayer);

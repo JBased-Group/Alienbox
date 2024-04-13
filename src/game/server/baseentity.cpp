@@ -4026,7 +4026,10 @@ bool CBaseEntity::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask, tr
 	return false;
 }
 
-#undef SQ_FUNCTION
+
+#define SQ_FUNCTION() CBaseEntity,VPhysicsDestroyObject
+#include "squirrel/AddInterfaceBinding.h"
+
 #define SQ_FUNCTION() (void,CBaseEntity,SetOwnerEntity,( CBaseEntity* pOwner ))
 #include "squirrel/AddToBindings.h"
 {
@@ -4543,6 +4546,19 @@ ConVar ent_messages_draw( "ent_messages_draw", "0", FCVAR_CHEAT, "Visualizes all
 #include "squirrel/AddToBindings.h"
 {
 	V_strncpy(((CSquirrelEntity*)this)->ThinkFunc, funcname, 256);
+}
+
+
+#define SQ_FUNCTION() (void,CBaseEntity,RemoveTouchFunc,())
+#include "squirrel/AddToBindings.h"
+{
+	((CSquirrelEntity*)this)->TouchFunc[0] = '\x00';
+}
+
+#define SQ_FUNCTION() (void,CBaseEntity,RemoveThinkFunc,())
+#include "squirrel/AddToBindings.h"
+{
+	((CSquirrelEntity*)this)->ThinkFunc[0] = '\x00';
 }
 
 //-----------------------------------------------------------------------------
@@ -5141,6 +5157,9 @@ struct TeleportListEntry_t
 #include "squirrel/AddInterfaceBinding.h"
 
 #define SQ_FUNCTION() CBaseEntity,AddSolidFlags
+#include "squirrel/AddInterfaceBinding.h"
+
+#define SQ_FUNCTION() CBaseEntity,RemoveSolidFlags
 #include "squirrel/AddInterfaceBinding.h"
 
 #define SQ_FUNCTION() CBaseEntity,SetCollisionGroup
@@ -5813,6 +5832,9 @@ int CBaseEntity_get(SquirrelScript script)
 constexpr auto CONCAT(LIBRARY_NAME, COUNTER_A) = Append(CONCAT(LIBRARY_NAME, COUNTER_B), CBaseEntity_get, "_get");
 #include INCREMENT_COUNTER_A
 #include INCREMENT_COUNTER_B
+
+#define SQ_FUNCTION() CBaseEntity,FollowEntity
+#include "squirrel/AddInterfaceBinding.h"
 
 //------------------------------------------------------------------------------
 // Purpose :
