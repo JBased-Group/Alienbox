@@ -3456,6 +3456,12 @@ TEMPORARY_TO_CPP(CUserCmd*)
 #define SQ_VARNAME viewangles
 #include "squirrel/MakeGetterSetter.h"
 
+#define SQ_VARNAME buttons
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME weaponselect
+#include "squirrel/MakeGetterSetter.h"
+
 ENDSQDELEGATE
 
 

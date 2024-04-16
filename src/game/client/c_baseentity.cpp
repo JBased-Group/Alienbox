@@ -5219,6 +5219,12 @@ void C_BaseEntity::SetDormantPredictable( bool dormant )
 #endif
 }
 
+#define SQ_INHERITNAME IHandleEntity
+#include "squirrel/InheritedConvert.h"
+
+
+TEMPORARY_FROM_CPP(IHandleEntity*)
+TEMPORARY_TO_CPP(IHandleEntity*)
 //-----------------------------------------------------------------------------
 // Purpose: Used to determine when a dorman client predictable can be safely deleted
 //  Note that it can be deleted earlier than this by OnPredictedEntityRemove returning true

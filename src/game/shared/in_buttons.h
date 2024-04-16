@@ -45,4 +45,6 @@
 #define IN_MELEE_CONTACT	(1 << 27)
 #endif
 
+#define IN_GRAB (1 << 28)
+
 #endif // IN_BUTTONS_H

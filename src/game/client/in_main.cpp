@@ -149,6 +149,7 @@ static	kbutton_t	in_lookup;
 static	kbutton_t	in_lookdown;
 static	kbutton_t	in_use;
 static	kbutton_t	in_jump;
+static	kbutton_t	in_grab;
 
 static	kbutton_t	in_up;
 static	kbutton_t	in_down;
@@ -525,7 +526,8 @@ void IN_JumpUp ( const CCommand &args )
 {	
 	KeyUp(&in_jump, args[1] );
 }
-
+void IN_GrabDown(const CCommand& args) { KeyDown(&in_grab, args[1]); }
+void IN_GrabUp(const CCommand& args) { KeyUp(&in_grab, args[1]); }
 
 void IN_DuckToggle( const CCommand &args ) 
 { 
@@ -1584,6 +1586,7 @@ int CInput::GetButtonBits( bool bResetState )
 	CalcButtonBits( nSlot, bits, IN_GRENADE1, ignore, &in_grenade1, bResetState );
 	CalcButtonBits( nSlot, bits, IN_GRENADE2, ignore, &in_grenade2, bResetState );
 	CalcButtonBits( nSlot, bits, IN_LOOKSPIN, ignore, &in_lookspin, bResetState );
+	CalcButtonBits( nSlot, bits, IN_GRAB, ignore, &in_grab, bResetState );
 
 	if ( KeyState(&in_ducktoggle) )
 	{
@@ -1752,6 +1755,9 @@ static ConCommand endgrenade2( "-grenade2", IN_Grenade2Up );
 static ConCommand startgrenade2( "+grenade2", IN_Grenade2Down );
 static ConCommand startlookspin("+lookspin", IN_LookSpinDown);
 static ConCommand endlookspin("-lookspin", IN_LookSpinUp);
+static ConCommand startgrab("+grab", IN_GrabDown);
+static ConCommand endgrab("-grab", IN_GrabUp);
+
 
 // Xbox 360 stub commands
 static ConCommand xboxmove("xmove", IN_XboxStub);

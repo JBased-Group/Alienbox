@@ -278,7 +278,7 @@ constexpr const char GetType()
 		return 'b';
 	if (Same<Value_Type, float>)
 		return 'f';
-	if (Same<Value_Type, int>)
+	if (Same<Value_Type, int> || Same<Value_Type, unsigned int>)
 		return 'i';
 	if (Same<Value_Type, void>)
 		return 'v';
@@ -627,6 +627,12 @@ inline bool ConvertToCpp<char*>(SquirrelScript script, char** valOut, int a)
 
 template <>
 inline bool ConvertToCpp<bool>(SquirrelScript script, bool* valOut, int a)
+{
+	return true;
+}
+
+template <>
+inline bool ConvertToCpp<unsigned int>(SquirrelScript script, unsigned int* valOut, int a)
 {
 	return true;
 }

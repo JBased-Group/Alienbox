@@ -5165,6 +5165,12 @@ struct TeleportListEntry_t
 #define SQ_FUNCTION() CBaseEntity,SetCollisionGroup
 #include "squirrel/AddInterfaceBinding.h"
 
+#define SQ_INHERITNAME IHandleEntity
+#include "squirrel/InheritedConvert.h"
+
+TEMPORARY_TO_CPP(IHandleEntity*)
+TEMPORARY_FROM_CPP(IHandleEntity*)
+
 static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &entry, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
 {
 	CBaseEntity *pTeleport = entry.pEntity;

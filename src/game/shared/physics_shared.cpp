@@ -1069,6 +1069,9 @@ void PrecachePhysicsSounds()
 	}
 }
 
+#define SQ_FUNCTION() UTIL_TraceRay
+#define SQ_OVERRIDE <void,const Ray_t&,unsigned int, const IHandleEntity*, int, trace_t*>
+#include "squirrel/AddInterfaceBinding.h"
 
 ENDSQFUNCTIONS
 
@@ -1089,7 +1092,47 @@ ENDSQFUNCTIONS
 
 ENDSQDELEGATE
 
-
-
 TEMPORARY_TO_CPP(IPhysicsObject*)
 DELEGATE_FROM_CPP(IPhysicsObject)
+
+
+#define SQ_CLASSNAME CGameTrace
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() CGameTrace,GetEntityIndex
+#include "squirrel/AddInterfaceBinding.h"
+
+ENDSQDELEGATE
+
+TEMPORARY_TO_CPP(CGameTrace*)
+DELEGATE_FROM_CPP(CGameTrace)
+
+TEMPORARY_TO_CPP(Ray_t*)
+
+
+#define SQ_CLASSNAME Ray_t
+#include "squirrel/StartLibrary.h"
+
+#define SQ_VARNAME m_Start
+#include "squirrel/MakeGetterSetter.h"
+
+#define SQ_VARNAME m_Delta
+#include "squirrel/MakeGetterSetter.h"
+
+ENDSQDELEGATE
+
+DELEGATE_FROM_CPP(Ray_t)
+
+#define SQ_CLASSNAME Ray_t_Create
+#include "squirrel/StartLibrary.h"
+
+#define SQ_FUNCTION() (Ray_t*,CreateRay_t,())
+#include "squirrel/AddToBindings.h"
+{
+	return new Ray_t;
+}
+
+ENDSQFUNCTIONS
+
+
+TEMPORARY_FROM_CPP(VectorAligned*)

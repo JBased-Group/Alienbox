@@ -13,8 +13,6 @@ class CSquirrelCombatWeapon extends CBaseEntity
 		base.CollisionProp().UseTriggerBounds(true,36.0);
 	}
 	
-	
-	
 	function GiveDefaultAmmo()
 	{
 	
@@ -50,6 +48,11 @@ class CSquirrelCombatWeapon extends CBaseEntity
 	function GetWorldModel()
 	{
 		return "models/weapons/plasmalauncher/plasmalauncher.mdl";
+	}
+	
+	function GetViewModel()
+	{
+		return "models/weapons/v_portalgun.mdl";
 	}
 	
 	function Precache()
@@ -109,7 +112,6 @@ class CSquirrelCombatWeapon extends CBaseEntity
 		base.RemoveThinkFunc();
 		base.RemoveTouchFunc();
 		base.VPhysicsDestroyObject();
-		
 		
 	}
 
