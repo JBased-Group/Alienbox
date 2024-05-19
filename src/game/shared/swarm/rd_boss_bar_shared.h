@@ -1,8 +1,0 @@
-#pragma once
-
-enum RD_Boss_Bar_Mode
-{
-	BOSS_BAR_FILL_TO_RIGHT,
-	BOSS_BAR_FILL_TO_LEFT,
-	BOSS_BAR_NUMERIC_VALUE
-};
